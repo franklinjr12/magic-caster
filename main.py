@@ -12,6 +12,7 @@ DEFAULTRECTSIZE = 15
 FACINGRIGHT = 1
 FACINGLEFT = -1
 DEFAULTGRAVITY = 1
+DEFAULTPLAYERMOVEDELAY = 50
 
 
 class Actor:
@@ -26,6 +27,7 @@ class Actor:
         self.headcolor = "yellow"
         self.yspeed = 0
         self.facing = FACINGRIGHT
+        self.last_time = pygame.time.get_ticks()
 
     def draw(self):
         pygame.draw.rect(screen, self.bodycolor, self.body)
@@ -56,6 +58,13 @@ class Actor:
         else:
             self.head.x = self.pos.x-DEFAULTRECTSIZE/2
         self.head.y = self.pos.y
+
+    def can_update_move(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_time > DEFAULTPLAYERMOVEDELAY:
+            self.last_time = pygame.time.get_ticks()
+            return True
+        return False
 # class Actor
 
 
@@ -113,10 +122,11 @@ while running:
                 player_moving_left = False
             if event.key == pygame.K_RIGHT:
                 player_moving_right = False
-    if player_moving_left:
-        player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
-    if player_moving_right:
-        player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
+    if player.can_update_move():
+        if player_moving_left:
+            player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
+        if player_moving_right:
+            player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
 
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
