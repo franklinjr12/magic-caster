@@ -13,6 +13,11 @@ FACINGRIGHT = 1
 FACINGLEFT = -1
 DEFAULTGRAVITY = 1
 DEFAULTPLAYERMOVEDELAY = 50
+DEFAULTPROJECTILESPEED = 1
+FIRSTSPELL = 1
+
+
+global_projectiles = []
 
 
 class Actor:
@@ -65,6 +70,15 @@ class Actor:
             self.last_time = pygame.time.get_ticks()
             return True
         return False
+
+    def cast_spell(self, spell):
+        if spell == FIRSTSPELL:
+            if self.facing == FACINGRIGHT:
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                     self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
+            else:
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                     self.pos.y+DEFAULTRECTSIZE/2, -DEFAULTPROJECTILESPEED, 0, 5, "red"))
 # class Actor
 
 
@@ -83,6 +97,30 @@ class Surface:
 
     def update(self):
         pass
+# class Surface
+
+
+class Projectile:
+    def __init__(self, owner, xpos, ypos, xvel, yvel, size, color):
+        self.owner = owner
+        self.pos = pygame.Vector2(xpos, ypos)
+        self.vel = pygame.Vector2(xvel, yvel)
+        self.size = size
+        # will create a circle
+        self.body = pygame.draw.circle(
+            screen, color, (self.pos.x, self.pos.y), self.size)
+        self.bodycolor = color
+
+    def draw(self):
+        pygame.draw.circle(screen, self.bodycolor,
+                           (self.pos.x, self.pos.y), self.size)
+
+    def update(self):
+        self.pos.x += self.vel.x
+        self.pos.y += self.vel.y
+        self.body.x = self.pos.x
+        self.body.y = self.pos.y
+# class Projectile
 
 
 # pygame setup
@@ -116,6 +154,8 @@ while running:
                 player.update(player.pos.x, player.pos.y - DEFAULTSPEED)
             if event.key == pygame.K_DOWN:
                 player.update(player.pos.x, player.pos.y + DEFAULTSPEED)
+            if event.key == pygame.K_q:
+                player.cast_spell(FIRSTSPELL)
         # check if key is still pressed
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
@@ -134,6 +174,8 @@ while running:
     # drawings
     for surface in surfaces:
         surface.draw()
+    for projectile in global_projectiles:
+        projectile.draw()
     player.draw()
 
     # logics
@@ -146,6 +188,8 @@ while running:
 
     # updates
     player.update(player.pos.x, player.pos.y)
+    for projectile in global_projectiles:
+        projectile.update()
 
     # flip() the display to put your work on screen
     pygame.display.flip()
