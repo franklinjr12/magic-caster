@@ -15,6 +15,7 @@ DEFAULTGRAVITY = 1
 DEFAULTPLAYERMOVEDELAY = 50
 DEFAULTPROJECTILESPEED = 1
 FIRSTSPELL = 1
+DEFAULTSPELLCOOLDOWN = 1000
 
 
 global_projectiles = []
@@ -33,6 +34,7 @@ class Actor:
         self.yspeed = 0
         self.facing = FACINGRIGHT
         self.last_time = pygame.time.get_ticks()
+        self.first_spell_last_time = pygame.time.get_ticks()
 
     def draw(self):
         pygame.draw.rect(screen, self.bodycolor, self.body)
@@ -73,12 +75,19 @@ class Actor:
 
     def cast_spell(self, spell):
         if spell == FIRSTSPELL:
-            if self.facing == FACINGRIGHT:
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
-            else:
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+            if self.firstspell_cooldown_off():
+                if self.facing == FACINGRIGHT:
+                    global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                        self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
+                else:
+                    global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
                                                      self.pos.y+DEFAULTRECTSIZE/2, -DEFAULTPROJECTILESPEED, 0, 5, "red"))
+    def firstspell_cooldown_off(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.first_spell_last_time > DEFAULTSPELLCOOLDOWN:
+            self.first_spell_last_time = pygame.time.get_ticks()
+            return True
+        return False
 # class Actor
 
 
