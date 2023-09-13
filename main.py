@@ -78,10 +78,11 @@ class Actor:
             if self.firstspell_cooldown_off():
                 if self.facing == FACINGRIGHT:
                     global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                        self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
+                                                         self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
                 else:
                     global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, -DEFAULTPROJECTILESPEED, 0, 5, "red"))
+                                                         self.pos.y+DEFAULTRECTSIZE/2, -DEFAULTPROJECTILESPEED, 0, 5, "red"))
+
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
         if current_time - self.first_spell_last_time > DEFAULTSPELLCOOLDOWN:
@@ -132,7 +133,7 @@ class Projectile:
 # class Projectile
 
 
-# pygame setup
+# game setup
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -140,9 +141,12 @@ running = True
 player = Actor(WIDTH / 2, HEIGHT / 2)
 floor = Surface(0, HEIGHT-HEIGHT*0.1, WIDTH, 4)
 surfaces = [floor]
-
 player_moving_left = False
 player_moving_right = False
+enemies = []
+enemies.append(Actor(100, HEIGHT/2))
+
+# game loop
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -185,20 +189,30 @@ while running:
         surface.draw()
     for projectile in global_projectiles:
         projectile.draw()
+    for enemy in enemies:
+        enemy.draw()
     player.draw()
 
     # logics
     player.pos.y += DEFAULTGRAVITY
+    for enemy in enemies:
+        enemy.pos.y += DEFAULTGRAVITY
     # check if player collides with surfaces
     for surface in surfaces:
         if player.body.colliderect(surface.body):
             player.pos.y = surface.pos.y - DEFAULTRECTSIZE
             player.yspeed = 0
+        for enemy in enemies:
+            if enemy.body.colliderect(surface.body):
+                enemy.pos.y = surface.pos.y - DEFAULTRECTSIZE
+                enemy.yspeed = 0
 
     # updates
     player.update(player.pos.x, player.pos.y)
     for projectile in global_projectiles:
         projectile.update()
+    for enemy in enemies:
+        enemy.update(enemy.pos.x, enemy.pos.y)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
