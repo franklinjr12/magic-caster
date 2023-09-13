@@ -194,6 +194,16 @@ while running:
     player.draw()
 
     # logics
+    # check if player collides with projectiles
+    for projectile in global_projectiles:
+        # if player.body.colliderect(projectile.body):
+        #     global_projectiles.remove(projectile)
+        # check if projectiles collide with enemies
+        for enemy in enemies:
+            if enemy.body.colliderect(projectile.body):
+                enemies.remove(enemy)
+                global_projectiles.remove(projectile)
+    # update gravity
     player.pos.y += DEFAULTGRAVITY
     for enemy in enemies:
         enemy.pos.y += DEFAULTGRAVITY
