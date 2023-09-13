@@ -13,7 +13,7 @@ FACINGRIGHT = 1
 FACINGLEFT = -1
 DEFAULTGRAVITY = 1
 DEFAULTPLAYERMOVEDELAY = 50
-DEFAULTPROJECTILESPEED = 1
+DEFAULTPROJECTILESPEED = 3
 FIRSTSPELL = 1
 DEFAULTSPELLCOOLDOWN = 1000
 
@@ -100,7 +100,7 @@ class Actor:
         return False
 
     def should_show_name(self, onoff):
-        self.show_name = onoff    
+        self.show_name = onoff
 # class Actor
 
 
