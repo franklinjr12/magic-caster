@@ -22,7 +22,7 @@ global_projectiles = []
 
 
 class Actor:
-    def __init__(self, xpos=0, ypos=0):
+    def __init__(self, xpos=0, ypos=0, show_name=False, actor_name=""):
         self.pos = pygame.Vector2(xpos, ypos)
         self.image = None
         self.body = pygame.Rect(self.pos.x, self.pos.y,
@@ -35,10 +35,19 @@ class Actor:
         self.facing = FACINGRIGHT
         self.last_time = pygame.time.get_ticks()
         self.first_spell_last_time = pygame.time.get_ticks()
+        self.show_name = show_name
+        self.actor_name = actor_name
 
     def draw(self):
         pygame.draw.rect(screen, self.bodycolor, self.body)
         pygame.draw.rect(screen, self.headcolor, self.head)
+        if self.show_name:
+            font = pygame.font.Font('freesansbold.ttf', 12)
+            text = font.render(self.actor_name, True, (255, 255, 255))
+            textRect = text.get_rect()
+            textRect.center = (self.pos.x+DEFAULTRECTSIZE/2,
+                               self.pos.y-DEFAULTRECTSIZE/2)
+            screen.blit(text, textRect)
 
     def update(self, newx=0, newy=0):
         if newx != 0:
@@ -89,6 +98,9 @@ class Actor:
             self.first_spell_last_time = pygame.time.get_ticks()
             return True
         return False
+
+    def should_show_name(self, onoff):
+        self.show_name = onoff    
 # class Actor
 
 
@@ -138,13 +150,13 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 running = True
-player = Actor(WIDTH / 2, HEIGHT / 2)
+player = Actor(WIDTH / 2, HEIGHT / 2, True, "Player")
 floor = Surface(0, HEIGHT-HEIGHT*0.1, WIDTH, 4)
 surfaces = [floor]
 player_moving_left = False
 player_moving_right = False
 enemies = []
-enemies.append(Actor(100, HEIGHT/2))
+enemies.append(Actor(100, HEIGHT/2, True, "Enemy1"))
 
 # game loop
 while running:
