@@ -18,8 +18,9 @@ DEFAULTPROJECTILESPEED = 3
 FIRSTSPELL = 1
 DEFAULTSPELLCOOLDOWN = 1000
 
-
+# globals
 global_projectiles = []
+game_paused = False
 
 
 class Actor:
@@ -94,7 +95,7 @@ class Actor:
             speed_y = -(DEFAULTPROJECTILESPEED * math.sin(math.radians(angle)))
             if self.firstspell_cooldown_off():
                 global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                        self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, 5, "red"))
+                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, 5, "red"))
 
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
@@ -164,15 +165,18 @@ enemies.append(Actor(100, HEIGHT/2, True, "Enemy1"))
 
 # game loop
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
-
+    # logics
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         # check if a key is pressed
         if event.type == pygame.KEYDOWN:
             # handles arrow keys
+            if event.key == pygame.K_RETURN:
+                game_paused = not game_paused
+            # break key event check if game is paused
+            if game_paused == True:
+                break
             if event.key == pygame.K_LEFT:
                 player_moving_left = True
                 #player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
@@ -191,11 +195,41 @@ while running:
                 player_moving_left = False
             if event.key == pygame.K_RIGHT:
                 player_moving_right = False
-    if player.can_update_move():
-        if player_moving_left:
-            player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
-        if player_moving_right:
-            player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
+    if game_paused == False:
+        if player.can_update_move():
+            if player_moving_left:
+                player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
+            if player_moving_right:
+                player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
+        # check if player collides with projectiles
+        for projectile in global_projectiles:
+            # if player.body.colliderect(projectile.body):
+            #     global_projectiles.remove(projectile)
+            # check if projectiles collide with enemies
+            for enemy in enemies:
+                if enemy.body.colliderect(projectile.body):
+                    enemies.remove(enemy)
+                    global_projectiles.remove(projectile)
+        # update gravity
+        player.pos.y += DEFAULTGRAVITY
+        for enemy in enemies:
+            enemy.pos.y += DEFAULTGRAVITY
+        # check if player collides with surfaces
+        for surface in surfaces:
+            if player.body.colliderect(surface.body):
+                player.pos.y = surface.pos.y - DEFAULTRECTSIZE
+                player.yspeed = 0
+            for enemy in enemies:
+                if enemy.body.colliderect(surface.body):
+                    enemy.pos.y = surface.pos.y - DEFAULTRECTSIZE
+                    enemy.yspeed = 0
+
+        # updates
+        player.update(player.pos.x, player.pos.y)
+        for projectile in global_projectiles:
+            projectile.update()
+        for enemy in enemies:
+            enemy.update(enemy.pos.x, enemy.pos.y)
 
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
@@ -208,37 +242,6 @@ while running:
     for enemy in enemies:
         enemy.draw()
     player.draw()
-
-    # logics
-    # check if player collides with projectiles
-    for projectile in global_projectiles:
-        # if player.body.colliderect(projectile.body):
-        #     global_projectiles.remove(projectile)
-        # check if projectiles collide with enemies
-        for enemy in enemies:
-            if enemy.body.colliderect(projectile.body):
-                enemies.remove(enemy)
-                global_projectiles.remove(projectile)
-    # update gravity
-    player.pos.y += DEFAULTGRAVITY
-    for enemy in enemies:
-        enemy.pos.y += DEFAULTGRAVITY
-    # check if player collides with surfaces
-    for surface in surfaces:
-        if player.body.colliderect(surface.body):
-            player.pos.y = surface.pos.y - DEFAULTRECTSIZE
-            player.yspeed = 0
-        for enemy in enemies:
-            if enemy.body.colliderect(surface.body):
-                enemy.pos.y = surface.pos.y - DEFAULTRECTSIZE
-                enemy.yspeed = 0
-
-    # updates
-    player.update(player.pos.x, player.pos.y)
-    for projectile in global_projectiles:
-        projectile.update()
-    for enemy in enemies:
-        enemy.update(enemy.pos.x, enemy.pos.y)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
