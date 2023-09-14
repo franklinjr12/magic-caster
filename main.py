@@ -1,6 +1,7 @@
 # Example file showing a basic pygame "game loop"
 import pygame
 import random
+import math
 
 # constants
 WIDTH = 1280
@@ -84,13 +85,16 @@ class Actor:
 
     def cast_spell(self, spell):
         if spell == FIRSTSPELL:
+            # get mouse position
+            mouse_pos = pygame.mouse.get_pos()
+            # get angle between player and mouse
+            angle = pygame.math.Vector2(mouse_pos[0]-self.pos.x,
+                                        mouse_pos[1]-self.pos.y).angle_to((1, 0))
+            speed_x = DEFAULTPROJECTILESPEED * math.cos(math.radians(angle))
+            speed_y = -(DEFAULTPROJECTILESPEED * math.sin(math.radians(angle)))
             if self.firstspell_cooldown_off():
-                if self.facing == FACINGRIGHT:
-                    global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                         self.pos.y+DEFAULTRECTSIZE/2, DEFAULTPROJECTILESPEED, 0, 5, "red"))
-                else:
-                    global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                         self.pos.y+DEFAULTRECTSIZE/2, -DEFAULTPROJECTILESPEED, 0, 5, "red"))
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                        self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, 5, "red"))
 
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
