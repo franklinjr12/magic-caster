@@ -15,6 +15,7 @@ FACINGLEFT = -1
 DEFAULTGRAVITY = 1
 DEFAULTPLAYERMOVEDELAY = 50
 DEFAULTPROJECTILESPEED = 3
+DEFAULTPROJECTILESIZE = 3
 FIRSTSPELL = 1
 DEFAULTSPELLCOOLDOWN = 1000
 
@@ -95,7 +96,7 @@ class Actor:
             speed_y = -(DEFAULTPROJECTILESPEED * math.sin(math.radians(angle)))
             if self.firstspell_cooldown_off():
                 global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, 5, "red"))
+                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, DEFAULTPROJECTILESIZE, "red"))
 
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
@@ -209,6 +210,10 @@ while running:
             for enemy in enemies:
                 if enemy.body.colliderect(projectile.body):
                     enemies.remove(enemy)
+                    global_projectiles.remove(projectile)
+            # check if projectilles collide with surfaces
+            for surface in surfaces:
+                if surface.body.colliderect(projectile.body):
                     global_projectiles.remove(projectile)
         # update gravity
         player.pos.y += DEFAULTGRAVITY
