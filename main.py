@@ -192,6 +192,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         # check if a key is pressed
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # check if left mouse clicked
+            mouse_buttons = pygame.mouse.get_pressed()
+            if mouse_buttons[0] == True:
+                player.cast_spell(FIRSTSPELL)
+            if mouse_buttons[2] == True:
+                player.cast_spell(SECONDSPELL)
         if event.type == pygame.KEYDOWN:
             # handles arrow keys
             if event.key == pygame.K_RETURN:
@@ -210,9 +217,7 @@ while running:
             if event.key == pygame.K_DOWN:
                 player.update(player.pos.x, player.pos.y + DEFAULTSPEED)
             if event.key == pygame.K_q:
-                player.cast_spell(FIRSTSPELL)
-            if event.key == pygame.K_w:
-                player.cast_spell(SECONDSPELL)
+                pass
         # check if key is still pressed
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
