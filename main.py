@@ -206,23 +206,23 @@ while running:
             # break key event check if game is paused
             if game_paused == True:
                 break
-            if event.key == pygame.K_LEFT:
+            if event.key == pygame.K_a:
                 player_moving_left = True
                 #player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_d:
                 player_moving_right = True
                 #player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_w:
                 player.update(player.pos.x, player.pos.y - DEFAULTSPEED)
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_s:
                 player.update(player.pos.x, player.pos.y + DEFAULTSPEED)
             if event.key == pygame.K_q:
                 pass
         # check if key is still pressed
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT:
+            if event.key == pygame.K_a:
                 player_moving_left = False
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_d:
                 player_moving_right = False
     if game_paused == False:
         if player.can_update_move():
