@@ -17,6 +17,7 @@ DEFAULTPLAYERMOVEDELAY = 50
 DEFAULTPROJECTILESPEED = 3
 DEFAULTPROJECTILESIZE = 3
 FIRSTSPELL = 1
+SECONDSPELL = 2
 DEFAULTSPELLCOOLDOWN = 1000
 
 # globals
@@ -40,6 +41,7 @@ class Actor:
         self.first_spell_last_time = pygame.time.get_ticks()
         self.show_name = show_name
         self.actor_name = actor_name
+        self.second_spell_last_time = pygame.time.get_ticks()
 
     def draw(self):
         pygame.draw.rect(screen, self.bodycolor, self.body)
@@ -86,21 +88,40 @@ class Actor:
         return False
 
     def cast_spell(self, spell):
+        # get mouse position
+        mouse_pos = pygame.mouse.get_pos()
+        # get angle between player and mouse
+        angle = pygame.math.Vector2(mouse_pos[0]-self.pos.x,
+                                    mouse_pos[1]-self.pos.y).angle_to((1, 0))
         if spell == FIRSTSPELL:
-            # get mouse position
-            mouse_pos = pygame.mouse.get_pos()
-            # get angle between player and mouse
-            angle = pygame.math.Vector2(mouse_pos[0]-self.pos.x,
-                                        mouse_pos[1]-self.pos.y).angle_to((1, 0))
             speed_x = DEFAULTPROJECTILESPEED * math.cos(math.radians(angle))
             speed_y = -(DEFAULTPROJECTILESPEED * math.sin(math.radians(angle)))
             if self.firstspell_cooldown_off():
                 global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
                                                      self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, DEFAULTPROJECTILESIZE, "red"))
+        if spell == SECONDSPELL:
+            if self.firstspell_cooldown_off():
+                speed_x = DEFAULTPROJECTILESPEED * \
+                    math.cos(math.radians(angle))
+                speed_y = -(DEFAULTPROJECTILESPEED *
+                            math.sin(math.radians(angle)))
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, DEFAULTPROJECTILESIZE, "blue"))
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y+math.sin(math.pi/6), DEFAULTPROJECTILESIZE, "blue"))
+                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
+                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y-math.sin(math.pi/6), DEFAULTPROJECTILESIZE, "blue"))
 
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
         if current_time - self.first_spell_last_time > DEFAULTSPELLCOOLDOWN:
+            self.first_spell_last_time = pygame.time.get_ticks()
+            return True
+        return False
+
+    def secondspell_cooldown_off(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.second_spell_last_time > DEFAULTSPELLCOOLDOWN*2:
             self.first_spell_last_time = pygame.time.get_ticks()
             return True
         return False
@@ -190,6 +211,8 @@ while running:
                 player.update(player.pos.x, player.pos.y + DEFAULTSPEED)
             if event.key == pygame.K_q:
                 player.cast_spell(FIRSTSPELL)
+            if event.key == pygame.K_w:
+                player.cast_spell(SECONDSPELL)
         # check if key is still pressed
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
