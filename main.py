@@ -3,40 +3,60 @@ import pygame
 import random
 import math
 
-# constants
-WIDTH = 1280
-HEIGHT = 720
-screen = None
 
-DEFAULTSPEED = 5
-DEFAULTRECTSIZE = 15
-FACINGRIGHT = 1
-FACINGLEFT = -1
-DEFAULTGRAVITY = 1
-DEFAULTPLAYERMOVEDELAY = 50
-DEFAULTPROJECTILESPEED = 3
-DEFAULTPROJECTILESIZE = 3
-FIRSTSPELL = 1
-SECONDSPELL = 2
-DEFAULTSPELLCOOLDOWN = 1000
+class GameEnvironment:
+    def __init__(self):
+        # constants
+        self.WIDTH = 1280
+        self.HEIGHT = 720
+        self.DEFAULTSPEED = 5
+        self.DEFAULTRECTSIZE = 15
+        self.FACINGRIGHT = 1
+        self.FACINGLEFT = -1
+        self.DEFAULTGRAVITY = 1
+        self.DEFAULTPLAYERMOVEDELAY = 50
+        self.DEFAULTPROJECTILESPEED = 3
+        self.DEFAULTPROJECTILESIZE = 3
+        self.FIRSTSPELL = 1
+        self.SECONDSPELL = 2
+        self.DEFAULTSPELLCOOLDOWN = 1000
+        # globals
+        self.global_projectiles = []
+        self.game_paused = False
+        self.player = None
+        self.enemies = []
+        self.surfaces = []
+        self.screen = None
+        self.clock = None
+        self.running = True
 
-# globals
-global_projectiles = []
-game_paused = False
+
+# class Game
 
 
 class Actor:
-    def __init__(self, xpos=0, ypos=0, show_name=False, actor_name=""):
+    def __init__(
+        self, xpos=0, ypos=0, show_name=False, actor_name="", game_environment=None
+    ):
+        self.game_environment = game_environment
         self.pos = pygame.Vector2(xpos, ypos)
         self.image = None
-        self.body = pygame.Rect(self.pos.x, self.pos.y,
-                                DEFAULTRECTSIZE, DEFAULTRECTSIZE)
+        self.body = pygame.Rect(
+            self.pos.x,
+            self.pos.y,
+            self.game_environment.DEFAULTRECTSIZE,
+            self.game_environment.DEFAULTRECTSIZE,
+        )
         self.head = pygame.Rect(
-            self.pos.x+DEFAULTRECTSIZE, self.pos.y, DEFAULTRECTSIZE/2, DEFAULTRECTSIZE/2)
+            self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+            self.pos.y,
+            self.game_environment.DEFAULTRECTSIZE / 2,
+            self.game_environment.DEFAULTRECTSIZE / 2,
+        )
         self.bodycolor = "white"
         self.headcolor = "yellow"
         self.yspeed = 0
-        self.facing = FACINGRIGHT
+        self.facing = self.game_environment.FACINGRIGHT
         self.last_time = pygame.time.get_ticks()
         self.first_spell_last_time = pygame.time.get_ticks()
         self.show_name = show_name
@@ -44,45 +64,47 @@ class Actor:
         self.second_spell_last_time = pygame.time.get_ticks()
 
     def draw(self):
-        pygame.draw.rect(screen, self.bodycolor, self.body)
-        pygame.draw.rect(screen, self.headcolor, self.head)
+        pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
+        pygame.draw.rect(self.game_environment.screen, self.headcolor, self.head)
         if self.show_name:
-            font = pygame.font.Font('freesansbold.ttf', 12)
+            font = pygame.font.Font("freesansbold.ttf", 12)
             text = font.render(self.actor_name, True, (255, 255, 255))
             textRect = text.get_rect()
-            textRect.center = (self.pos.x+DEFAULTRECTSIZE/2,
-                               self.pos.y-DEFAULTRECTSIZE/2)
-            screen.blit(text, textRect)
+            textRect.center = (
+                self.pos.x + self.game_environment.DEFAULTRECTSIZE / 2,
+                self.pos.y - self.game_environment.DEFAULTRECTSIZE / 2,
+            )
+            self.game_environment.screen.blit(text, textRect)
 
     def update(self, newx=0, newy=0):
         if newx != 0:
             if newx > self.pos.x:
-                self.facing = FACINGRIGHT
+                self.facing = self.game_environment.FACINGRIGHT
             elif newx < self.pos.x:
-                self.facing = FACINGLEFT
+                self.facing = self.game_environment.FACINGLEFT
             self.pos.x = newx
             # check for border
             if self.pos.x < 0:
                 self.pos.x = 0
-            if self.pos.x > WIDTH:
-                self.pos.x = WIDTH
+            if self.pos.x > self.game_environment.WIDTH:
+                self.pos.x = self.game_environment.WIDTH
         self.pos.y = newy + self.yspeed
         # check for border
         if self.pos.y < 0:
             self.pos.y = 0
-        if self.pos.y > HEIGHT:
-            self.pos.y = HEIGHT
+        if self.pos.y > self.game_environment.HEIGHT:
+            self.pos.y = self.game_environment.HEIGHT
         self.body.x = self.pos.x
         self.body.y = self.pos.y
-        if self.facing == FACINGRIGHT:
-            self.head.x = self.pos.x+DEFAULTRECTSIZE
+        if self.facing == self.game_environment.FACINGRIGHT:
+            self.head.x = self.pos.x + self.game_environment.DEFAULTRECTSIZE
         else:
-            self.head.x = self.pos.x-DEFAULTRECTSIZE/2
+            self.head.x = self.pos.x - self.game_environment.DEFAULTRECTSIZE / 2
         self.head.y = self.pos.y
 
     def can_update_move(self):
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_time > DEFAULTPLAYERMOVEDELAY:
+        if current_time - self.last_time > self.game_environment.DEFAULTPLAYERMOVEDELAY:
             self.last_time = pygame.time.get_ticks()
             return True
         return False
@@ -91,193 +113,319 @@ class Actor:
         # get mouse position
         mouse_pos = pygame.mouse.get_pos()
         # get angle between player and mouse
-        angle = pygame.math.Vector2(mouse_pos[0]-self.pos.x,
-                                    mouse_pos[1]-self.pos.y).angle_to((1, 0))
-        if spell == FIRSTSPELL:
-            speed_x = DEFAULTPROJECTILESPEED * math.cos(math.radians(angle))
-            speed_y = -(DEFAULTPROJECTILESPEED * math.sin(math.radians(angle)))
+        angle = pygame.math.Vector2(
+            mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
+        ).angle_to((1, 0))
+        if spell == self.game_environment.FIRSTSPELL:
+            speed_x = self.game_environment.DEFAULTPROJECTILESPEED * math.cos(
+                math.radians(angle)
+            )
+            speed_y = -(
+                self.game_environment.DEFAULTPROJECTILESPEED
+                * math.sin(math.radians(angle))
+            )
             if self.firstspell_cooldown_off():
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, DEFAULTPROJECTILESIZE, "red"))
-        if spell == SECONDSPELL:
+                self.game_environment.global_projectiles.append(
+                    Projectile(
+                        self,
+                        self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+                        self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
+                        speed_x,
+                        speed_y,
+                        self.game_environment.DEFAULTPROJECTILESIZE,
+                        "red",
+                        self.game_environment,
+                    )
+                )
+        if spell == self.game_environment.SECONDSPELL:
             if self.firstspell_cooldown_off():
-                speed_x = DEFAULTPROJECTILESPEED * \
-                    math.cos(math.radians(angle))
-                speed_y = -(DEFAULTPROJECTILESPEED *
-                            math.sin(math.radians(angle)))
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y, DEFAULTPROJECTILESIZE, "blue"))
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y+math.sin(math.pi/6), DEFAULTPROJECTILESIZE, "blue"))
-                global_projectiles.append(Projectile(self, self.pos.x+DEFAULTRECTSIZE,
-                                                     self.pos.y+DEFAULTRECTSIZE/2, speed_x, speed_y-math.sin(math.pi/6), DEFAULTPROJECTILESIZE, "blue"))
+                speed_x = self.game_environment.DEFAULTPROJECTILESPEED * math.cos(
+                    math.radians(angle)
+                )
+                speed_y = -(
+                    self.game_environment.DEFAULTPROJECTILESPEED
+                    * math.sin(math.radians(angle))
+                )
+                self.game_environment.global_projectiles.append(
+                    Projectile(
+                        self,
+                        self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+                        self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
+                        speed_x,
+                        speed_y,
+                        self.game_environment.DEFAULTPROJECTILESIZE,
+                        "blue",
+                        self.game_environment,
+                    )
+                )
+                self.game_environment.global_projectiles.append(
+                    Projectile(
+                        self,
+                        self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+                        self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
+                        speed_x,
+                        speed_y + math.sin(math.pi / 6),
+                        self.game_environment.DEFAULTPROJECTILESIZE,
+                        "blue",
+                        self.game_environment,
+                    )
+                )
+                self.game_environment.global_projectiles.append(
+                    Projectile(
+                        self,
+                        self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+                        self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
+                        speed_x,
+                        speed_y - math.sin(math.pi / 6),
+                        self.game_environment.DEFAULTPROJECTILESIZE,
+                        "blue",
+                        self.game_environment,
+                    )
+                )
 
     def firstspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
-        if current_time - self.first_spell_last_time > DEFAULTSPELLCOOLDOWN:
+        if (
+            current_time - self.first_spell_last_time
+            > self.game_environment.DEFAULTSPELLCOOLDOWN
+        ):
             self.first_spell_last_time = pygame.time.get_ticks()
             return True
         return False
 
     def secondspell_cooldown_off(self):
         current_time = pygame.time.get_ticks()
-        if current_time - self.second_spell_last_time > DEFAULTSPELLCOOLDOWN*2:
+        if (
+            current_time - self.second_spell_last_time
+            > self.game_environment.DEFAULTSPELLCOOLDOWN * 2
+        ):
             self.first_spell_last_time = pygame.time.get_ticks()
             return True
         return False
 
     def should_show_name(self, onoff):
         self.show_name = onoff
+
+
 # class Actor
 
 
 class Surface:
-    def __init__(self, xpos, ypos, width, height):
+    def __init__(self, xpos, ypos, width, height, game_environment):
+        self.game_environment = game_environment
         self.pos = pygame.Vector2(xpos, ypos)
         self.image = None
         self.width = width
         self.height = height
-        self.body = pygame.Rect(self.pos.x, self.pos.y,
-                                self.width, self.height)
+        self.body = pygame.Rect(
+            self.pos.x,
+            self.pos.y,
+            self.width,
+            self.height,
+        )
         self.bodycolor = "green"
 
     def draw(self):
-        pygame.draw.rect(screen, self.bodycolor, self.body)
+        pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
 
     def update(self):
         pass
+
+
 # class Surface
 
 
 class Projectile:
-    def __init__(self, owner, xpos, ypos, xvel, yvel, size, color):
+    def __init__(self, owner, xpos, ypos, xvel, yvel, size, color, game_environment):
+        self.game_environment = game_environment
         self.owner = owner
         self.pos = pygame.Vector2(xpos, ypos)
         self.vel = pygame.Vector2(xvel, yvel)
         self.size = size
         # will create a circle
         self.body = pygame.draw.circle(
-            screen, color, (self.pos.x, self.pos.y), self.size)
+            self.game_environment.screen, color, (self.pos.x, self.pos.y), self.size
+        )
         self.bodycolor = color
 
     def draw(self):
-        pygame.draw.circle(screen, self.bodycolor,
-                           (self.pos.x, self.pos.y), self.size)
+        pygame.draw.circle(
+            self.game_environment.screen,
+            self.bodycolor,
+            (self.pos.x, self.pos.y),
+            self.size,
+        )
 
     def update(self):
         self.pos.x += self.vel.x
         self.pos.y += self.vel.y
         self.body.x = self.pos.x
         self.body.y = self.pos.y
+
+
 # class Projectile
 
 
-# game setup
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()
-running = True
-player = Actor(WIDTH / 2, HEIGHT / 2, True, "Player")
-floor = Surface(0, HEIGHT-HEIGHT*0.1, WIDTH, 4)
-surfaces = [floor]
-player_moving_left = False
-player_moving_right = False
-enemies = []
-enemies.append(Actor(100, HEIGHT/2, True, "Enemy1"))
+class Spell:
+    def __init__(self, shape=None, effect=None, element=None, modifiers=None):
+        self.shape = shape
+        self.effect = effect
+        self.element = element
+        self.modifiers = modifiers
 
-# game loop
-while running:
-    # logics
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        # check if a key is pressed
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # check if left mouse clicked
-            mouse_buttons = pygame.mouse.get_pressed()
-            if mouse_buttons[0] == True:
-                player.cast_spell(FIRSTSPELL)
-            if mouse_buttons[2] == True:
-                player.cast_spell(SECONDSPELL)
-        if event.type == pygame.KEYDOWN:
-            # handles arrow keys
-            if event.key == pygame.K_RETURN:
-                game_paused = not game_paused
-            # break key event check if game is paused
-            if game_paused == True:
-                break
-            if event.key == pygame.K_a:
-                player_moving_left = True
-                #player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
-            if event.key == pygame.K_d:
-                player_moving_right = True
-                #player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
-            if event.key == pygame.K_w:
-                player.update(player.pos.x, player.pos.y - DEFAULTSPEED)
-            if event.key == pygame.K_s:
-                player.update(player.pos.x, player.pos.y + DEFAULTSPEED)
-            if event.key == pygame.K_q:
-                pass
-        # check if key is still pressed
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_a:
-                player_moving_left = False
-            if event.key == pygame.K_d:
-                player_moving_right = False
-    if game_paused == False:
-        if player.can_update_move():
-            if player_moving_left:
-                player.update(player.pos.x - DEFAULTSPEED, player.pos.y)
-            if player_moving_right:
-                player.update(player.pos.x + DEFAULTSPEED, player.pos.y)
-        # check if player collides with projectiles
-        for projectile in global_projectiles:
-            # if player.body.colliderect(projectile.body):
-            #     global_projectiles.remove(projectile)
-            # check if projectiles collide with enemies
-            for enemy in enemies:
-                if enemy.body.colliderect(projectile.body):
-                    enemies.remove(enemy)
-                    global_projectiles.remove(projectile)
-            # check if projectilles collide with surfaces
-            for surface in surfaces:
-                if surface.body.colliderect(projectile.body):
-                    global_projectiles.remove(projectile)
-        # update gravity
-        player.pos.y += DEFAULTGRAVITY
-        for enemy in enemies:
-            enemy.pos.y += DEFAULTGRAVITY
-        # check if player collides with surfaces
-        for surface in surfaces:
-            if player.body.colliderect(surface.body):
-                player.pos.y = surface.pos.y - DEFAULTRECTSIZE
-                player.yspeed = 0
-            for enemy in enemies:
-                if enemy.body.colliderect(surface.body):
-                    enemy.pos.y = surface.pos.y - DEFAULTRECTSIZE
-                    enemy.yspeed = 0
 
-        # updates
-        player.update(player.pos.x, player.pos.y)
-        for projectile in global_projectiles:
-            projectile.update()
-        for enemy in enemies:
-            enemy.update(enemy.pos.x, enemy.pos.y)
+# class Spell
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("black")
 
-    # drawings
-    for surface in surfaces:
-        surface.draw()
-    for projectile in global_projectiles:
-        projectile.draw()
-    for enemy in enemies:
-        enemy.draw()
-    player.draw()
+def setup(game_environment: GameEnvironment):
+    # game setup
+    pygame.init()
+    game_environment.screen = pygame.display.set_mode(
+        (game_environment.WIDTH, game_environment.HEIGHT)
+    )
+    game_environment.clock = pygame.time.Clock()
+    game_environment.running = True
+    game_environment.player = Actor(
+        game_environment.WIDTH / 2,
+        game_environment.HEIGHT / 2,
+        True,
+        "Player",
+        game_environment,
+    )
+    floor = Surface(
+        0,
+        game_environment.HEIGHT - game_environment.HEIGHT * 0.1,
+        game_environment.WIDTH,
+        4,
+        game_environment,
+    )
+    game_environment.surfaces.append(floor)
+    game_environment.player_moving_left = False
+    game_environment.player_moving_right = False
+    game_environment.enemies.append(
+        Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
+    )
 
-    # flip() the display to put your work on screen
-    pygame.display.flip()
 
-    clock.tick(60)  # limits FPS to 60
-pygame.quit()
+def loop(game_environment: GameEnvironment):
+    # game loop
+    while game_environment.running:
+        # logics
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_environment.running = False
+            # check if a key is pressed
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # check if left mouse clicked
+                mouse_buttons = pygame.mouse.get_pressed()
+                if mouse_buttons[0] == True:
+                    game_environment.player.cast_spell(game_environment.FIRSTSPELL)
+                if mouse_buttons[2] == True:
+                    game_environment.player.cast_spell(game_environment.SECONDSPELL)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game_environment.game_paused = not game_environment.game_paused
+                # break key event check if game is paused
+                if game_environment.game_paused == True:
+                    break
+                if event.key == pygame.K_a:
+                    game_environment.player_moving_left = True
+                    # player.update(player.pos.x - game_environment.DEFAULTSPEED, player.pos.y)
+                if event.key == pygame.K_d:
+                    game_environment.player_moving_right = True
+                    # player.update(player.pos.x + game_environment.DEFAULTSPEED, player.pos.y)
+                if event.key == pygame.K_w:
+                    game_environment.player.update(
+                        game_environment.player.pos.x,
+                        game_environment.player.pos.y - game_environment.DEFAULTSPEED,
+                    )
+                if event.key == pygame.K_s:
+                    game_environment.player.update(
+                        game_environment.player.pos.x,
+                        game_environment.player.pos.y + game_environment.DEFAULTSPEED,
+                    )
+                if event.key == pygame.K_q:
+                    pass
+            # check if key is still pressed
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_a:
+                    game_environment.player_moving_left = False
+                if event.key == pygame.K_d:
+                    game_environment.player_moving_right = False
+        if game_environment.game_paused == False:
+            if game_environment.player.can_update_move():
+                if game_environment.player_moving_left:
+                    game_environment.player.update(
+                        game_environment.player.pos.x - game_environment.DEFAULTSPEED,
+                        game_environment.player.pos.y,
+                    )
+                if game_environment.player_moving_right:
+                    game_environment.player.update(
+                        game_environment.player.pos.x + game_environment.DEFAULTSPEED,
+                        game_environment.player.pos.y,
+                    )
+            # check if player collides with projectiles
+            for projectile in game_environment.global_projectiles:
+                # if player.body.colliderect(projectile.body):
+                #     global_projectiles.remove(projectile)
+                # check if projectiles collide with enemies
+                for enemy in game_environment.enemies:
+                    if enemy.body.colliderect(projectile.body):
+                        game_environment.enemies.remove(enemy)
+                        game_environment.global_projectiles.remove(projectile)
+                # check if projectilles collide with surfaces
+                for surface in game_environment.surfaces:
+                    if surface.body.colliderect(projectile.body):
+                        game_environment.global_projectiles.remove(projectile)
+            # update gravity
+            game_environment.player.pos.y += game_environment.DEFAULTGRAVITY
+            for enemy in game_environment.enemies:
+                enemy.pos.y += game_environment.DEFAULTGRAVITY
+            # check if player collides with surfaces
+            for surface in game_environment.surfaces:
+                if game_environment.player.body.colliderect(surface.body):
+                    game_environment.player.pos.y = (
+                        surface.pos.y - game_environment.DEFAULTRECTSIZE
+                    )
+                    game_environment.player.yspeed = 0
+                for enemy in game_environment.enemies:
+                    if enemy.body.colliderect(surface.body):
+                        enemy.pos.y = surface.pos.y - game_environment.DEFAULTRECTSIZE
+                        enemy.yspeed = 0
+
+            # updates
+            game_environment.player.update(
+                game_environment.player.pos.x, game_environment.player.pos.y
+            )
+            for projectile in game_environment.global_projectiles:
+                projectile.update()
+            for enemy in game_environment.enemies:
+                enemy.update(enemy.pos.x, enemy.pos.y)
+
+        # fill the game_environment.screen with a color to wipe away anything from last frame
+        game_environment.screen.fill("black")
+
+        # drawings
+        for surface in game_environment.surfaces:
+            surface.draw()
+        for projectile in game_environment.global_projectiles:
+            projectile.draw()
+        for enemy in game_environment.enemies:
+            enemy.draw()
+        game_environment.player.draw()
+
+        # flip() the display to put your work on game_environment.screen
+        pygame.display.flip()
+
+        game_environment.clock.tick(60)  # limits FPS to 60
+    pygame.quit()
+
+
+def main():
+    game_environment = GameEnvironment()
+    setup(game_environment)
+    loop(game_environment)
+
+
+if __name__ == "__main__":
+    main()
