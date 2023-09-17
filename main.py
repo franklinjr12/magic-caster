@@ -34,6 +34,27 @@ class GameEnvironment:
 # class Game
 
 
+class Spell:
+    def __init__(
+        self,
+        shape=None,
+        effect=None,
+        element=None,
+        modifiers=None,
+        description=None,
+        is_projectile=True,
+    ):
+        self.shape = shape
+        self.effect = effect
+        self.element = element
+        self.modifiers = modifiers
+        self.description = description
+        self.is_projectile = is_projectile
+
+
+# class Spell
+
+
 class Actor:
     def __init__(
         self, xpos=0, ypos=0, show_name=False, actor_name="", game_environment=None
@@ -109,6 +130,12 @@ class Actor:
             return True
         return False
 
+    def set_spell(self, spell_number, spell: Spell):
+        if spell_number == self.game_environment.FIRSTSPELL:
+            self.first_spell = spell
+        elif spell_number == self.game_environment.SECONDSPELL:
+            self.second_spell = spell
+
     def cast_spell(self, spell):
         # get mouse position
         mouse_pos = pygame.mouse.get_pos()
@@ -117,26 +144,27 @@ class Actor:
             mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
         ).angle_to((1, 0))
         if spell == self.game_environment.FIRSTSPELL:
-            speed_x = self.game_environment.DEFAULTPROJECTILESPEED * math.cos(
-                math.radians(angle)
-            )
-            speed_y = -(
-                self.game_environment.DEFAULTPROJECTILESPEED
-                * math.sin(math.radians(angle))
-            )
             if self.firstspell_cooldown_off():
-                self.game_environment.global_projectiles.append(
-                    Projectile(
-                        self,
-                        self.pos.x + self.game_environment.DEFAULTRECTSIZE,
-                        self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
-                        speed_x,
-                        speed_y,
-                        self.game_environment.DEFAULTPROJECTILESIZE,
-                        "red",
-                        self.game_environment,
-                    )
+                speed_x = self.game_environment.DEFAULTPROJECTILESPEED * math.cos(
+                    math.radians(angle)
                 )
+                speed_y = -(
+                    self.game_environment.DEFAULTPROJECTILESPEED
+                    * math.sin(math.radians(angle))
+                )
+                if self.first_spell.is_projectile:
+                    self.game_environment.global_projectiles.append(
+                        Projectile(
+                            self,
+                            self.pos.x + self.game_environment.DEFAULTRECTSIZE,
+                            self.pos.y + self.game_environment.DEFAULTRECTSIZE / 2,
+                            speed_x,
+                            speed_y,
+                            self.game_environment.DEFAULTPROJECTILESIZE,
+                            "red",
+                            self.game_environment,
+                        )
+                    )
         if spell == self.game_environment.SECONDSPELL:
             if self.firstspell_cooldown_off():
                 speed_x = self.game_environment.DEFAULTPROJECTILESPEED * math.cos(
@@ -266,17 +294,6 @@ class Projectile:
 # class Projectile
 
 
-class Spell:
-    def __init__(self, shape=None, effect=None, element=None, modifiers=None):
-        self.shape = shape
-        self.effect = effect
-        self.element = element
-        self.modifiers = modifiers
-
-
-# class Spell
-
-
 def setup(game_environment: GameEnvironment):
     # game setup
     pygame.init()
@@ -292,6 +309,15 @@ def setup(game_environment: GameEnvironment):
         "Player",
         game_environment,
     )
+    firsft_spell = Spell(
+        shape="circle",
+        effect="damage",
+        element="energy",
+        modifiers=None,
+        description="simple energy projectile",
+        is_projectile=True,
+    )
+    game_environment.player.set_spell(game_environment.FIRSTSPELL, firsft_spell)
     floor = Surface(
         0,
         game_environment.HEIGHT - game_environment.HEIGHT * 0.1,
