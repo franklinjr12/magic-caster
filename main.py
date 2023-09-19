@@ -5,30 +5,29 @@ import math
 
 
 class GameEnvironment:
-    def __init__(self):
-        # constants
-        self.WIDTH = 1280
-        self.HEIGHT = 720
-        self.DEFAULTSPEED = 5
-        self.DEFAULTRECTSIZE = 15
-        self.FACINGRIGHT = 1
-        self.FACINGLEFT = -1
-        self.DEFAULTGRAVITY = 1
-        self.DEFAULTPLAYERMOVEDELAY = 50
-        self.DEFAULTPROJECTILESPEED = 3
-        self.DEFAULTPROJECTILESIZE = 3
-        self.FIRSTSPELL = 1
-        self.SECONDSPELL = 2
-        self.DEFAULTSPELLCOOLDOWN = 1000
-        # globals
-        self.global_projectiles = []
-        self.game_paused = False
-        self.player = None
-        self.enemies = []
-        self.surfaces = []
-        self.screen = None
-        self.clock = None
-        self.running = True
+    # constants
+    WIDTH = 1280
+    HEIGHT = 720
+    DEFAULTSPEED = 5
+    DEFAULTRECTSIZE = 15
+    FACINGRIGHT = 1
+    FACINGLEFT = -1
+    DEFAULTGRAVITY = 1
+    DEFAULTPLAYERMOVEDELAY = 50
+    DEFAULTPROJECTILESPEED = 3
+    DEFAULTPROJECTILESIZE = 3
+    FIRSTSPELL = 1
+    SECONDSPELL = 2
+    DEFAULTSPELLCOOLDOWN = 1000
+    # globals
+    global_projectiles = []
+    game_paused = False
+    player = None
+    enemies = []
+    surfaces = []
+    screen = None
+    clock = None
+    running = True
 
 
 # class Game
@@ -121,6 +120,13 @@ class Spell:
 # class Spell
 
 
+class GameSpells:
+    spells = {}
+
+
+# class GameSpells
+
+
 class Actor:
     def __init__(
         self, xpos=0, ypos=0, show_name=False, actor_name="", game_environment=None
@@ -196,11 +202,11 @@ class Actor:
             return True
         return False
 
-    def set_spell(self, spell_number, spell: Spell):
+    def set_spell(self, spell_number):
         if spell_number == self.game_environment.FIRSTSPELL:
-            self.first_spell = spell
+            self.first_spell = GameSpells.spells[spell_number]
         elif spell_number == self.game_environment.SECONDSPELL:
-            self.second_spell = spell
+            self.second_spell = GameSpells.spells[spell_number]
 
     def cast_spell(self, spell):
         # get mouse position
@@ -236,7 +242,7 @@ class Actor:
             current_time - self.second_spell_last_time
             > self.game_environment.DEFAULTSPELLCOOLDOWN * 2
         ):
-            self.first_spell_last_time = pygame.time.get_ticks()
+            self.second_spell_last_time = pygame.time.get_ticks()
             return True
         return False
 
@@ -318,7 +324,7 @@ def setup(game_environment: GameEnvironment):
         "Player",
         game_environment,
     )
-    firsft_spell = Spell(
+    GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
         shape={"type": "circle", "size": 2, "color": "red"},
         effect="damage",
         element="energy",
@@ -326,16 +332,17 @@ def setup(game_environment: GameEnvironment):
         description="simple energy projectile",
         is_projectile=True,
     )
-    second_spell = Spell(
+    GameSpells.spells[GameEnvironment.SECONDSPELL] = Spell(
         shape={"type": "circle", "size": 2, "color": "blue"},
         effect="damage",
         element="ice",
-        modifiers=None,
+        modifiers=["slow"],
         description="3 shot energy projectile",
         is_projectile=True,
     )
-    game_environment.player.set_spell(game_environment.FIRSTSPELL, firsft_spell)
-    game_environment.player.set_spell(game_environment.SECONDSPELL, second_spell)
+    # put first spell on player.set_spell
+    game_environment.player.set_spell(game_environment.FIRSTSPELL)
+    game_environment.player.set_spell(game_environment.SECONDSPELL)
     floor = Surface(
         0,
         game_environment.HEIGHT - game_environment.HEIGHT * 0.1,
