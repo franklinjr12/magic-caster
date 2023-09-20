@@ -42,6 +42,7 @@ class Spell:
         modifiers=None,
         description=None,
         is_projectile=True,
+        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
     ):
         self.shape = shape
         self.effect = effect
@@ -49,8 +50,19 @@ class Spell:
         self.modifiers = modifiers
         self.description = description
         self.is_projectile = is_projectile
+        self.cooldown = cooldown
+        self.cooldown_ticks = 0
+
+    def is_on_cooldown(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.cooldown_ticks > self.cooldown:
+            self.cooldown_ticks = pygame.time.get_ticks()
+            return False
+        return True
 
     def cast(self, game_environment, x, y, angle):
+        if self.is_on_cooldown():
+            return
         if self.description == "simple energy projectile":
             speed_x = game_environment.DEFAULTPROJECTILESPEED * math.cos(
                 math.radians(angle)
@@ -216,35 +228,9 @@ class Actor:
             mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
         ).angle_to((1, 0))
         if spell == self.game_environment.FIRSTSPELL:
-            if self.firstspell_cooldown_off():
-                self.first_spell.cast(
-                    self.game_environment, self.pos.x, self.pos.y, angle
-                )
+            self.first_spell.cast(self.game_environment, self.pos.x, self.pos.y, angle)
         if spell == self.game_environment.SECONDSPELL:
-            if self.secondspell_cooldown_off():
-                self.second_spell.cast(
-                    self.game_environment, self.pos.x, self.pos.y, angle
-                )
-
-    def firstspell_cooldown_off(self):
-        current_time = pygame.time.get_ticks()
-        if (
-            current_time - self.first_spell_last_time
-            > self.game_environment.DEFAULTSPELLCOOLDOWN
-        ):
-            self.first_spell_last_time = pygame.time.get_ticks()
-            return True
-        return False
-
-    def secondspell_cooldown_off(self):
-        current_time = pygame.time.get_ticks()
-        if (
-            current_time - self.second_spell_last_time
-            > self.game_environment.DEFAULTSPELLCOOLDOWN * 2
-        ):
-            self.second_spell_last_time = pygame.time.get_ticks()
-            return True
-        return False
+            self.second_spell.cast(self.game_environment, self.pos.x, self.pos.y, angle)
 
     def should_show_name(self, onoff):
         self.show_name = onoff
@@ -331,6 +317,7 @@ def setup(game_environment: GameEnvironment):
         modifiers=None,
         description="simple energy projectile",
         is_projectile=True,
+        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
     )
     GameSpells.spells[GameEnvironment.SECONDSPELL] = Spell(
         shape={"type": "circle", "size": 2, "color": "blue"},
@@ -339,6 +326,7 @@ def setup(game_environment: GameEnvironment):
         modifiers=["slow"],
         description="3 shot energy projectile",
         is_projectile=True,
+        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
     )
     # put first spell on player.set_spell
     game_environment.player.set_spell(game_environment.FIRSTSPELL)
