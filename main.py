@@ -55,6 +55,7 @@ class Spell:
 
     def is_on_cooldown(self):
         current_time = pygame.time.get_ticks()
+        print(current_time)
         if current_time - self.cooldown_ticks > self.cooldown:
             self.cooldown_ticks = pygame.time.get_ticks()
             return False
@@ -295,6 +296,39 @@ class Projectile:
 # class Projectile
 
 
+class SpellCooldownDisplay:
+    def __init__(self, key, spell: Spell, game_environment, xpos, ypos, size):
+        self.key = key
+        self.game_environment = game_environment
+        self.spell = spell
+        self.xpos = xpos
+        self.ypos = ypos
+        self.size = size
+
+    def draw(self):
+        color = "white"
+        if self.spell.is_on_cooldown():
+            color = "red"
+        # make rectangle on xpos and ypox
+        pygame.draw.rect(
+            self.game_environment.screen,
+            color,
+            (self.xpos, self.ypos, self.size, self.size),
+        )
+        # draw key letter on rectangle
+        font = pygame.font.Font("freesansbold.ttf", 12)
+        text = font.render(self.key, True, (0, 0, 0))
+        textRect = text.get_rect()
+        textRect.center = (
+            self.xpos + self.size / 2,
+            self.ypos + self.size / 2,
+        )
+        self.game_environment.screen.blit(text, textRect)
+
+
+# class SpellCooldownDisplay
+
+
 def setup(game_environment: GameEnvironment):
     # game setup
     pygame.init()
@@ -347,6 +381,9 @@ def setup(game_environment: GameEnvironment):
 
 
 def loop(game_environment: GameEnvironment):
+    q_spell_cooldown_display = SpellCooldownDisplay(
+        "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
+    )
     # game loop
     while game_environment.running:
         # logics
@@ -452,6 +489,7 @@ def loop(game_environment: GameEnvironment):
         for enemy in game_environment.enemies:
             enemy.draw()
         game_environment.player.draw()
+        q_spell_cooldown_display.draw()
 
         # flip() the display to put your work on game_environment.screen
         pygame.display.flip()
