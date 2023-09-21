@@ -19,6 +19,8 @@ class GameEnvironment:
     FIRSTSPELL = 1
     SECONDSPELL = 2
     DEFAULTSPELLCOOLDOWN = 1000
+    DEFAULTLIFE = 100
+    DEFAULTSPELLDAMAGE = 10
     # globals
     global_projectiles = []
     game_paused = False
@@ -52,6 +54,7 @@ class Spell:
         self.is_projectile = is_projectile
         self.cooldown = cooldown
         self.cooldown_ticks = 0
+        self.damage = GameEnvironment.DEFAULTSPELLDAMAGE
 
     def is_on_cooldown(self):
         current_time = pygame.time.get_ticks()
@@ -136,6 +139,36 @@ class GameSpells:
     spells = {}
 
 
+class Projectile:
+    def __init__(self, spell, xpos, ypos, xvel, yvel, size, color, game_environment):
+        self.game_environment = game_environment
+        self.spell = spell
+        self.pos = pygame.Vector2(xpos, ypos)
+        self.vel = pygame.Vector2(xvel, yvel)
+        self.size = size
+        # will create a circle
+        self.body = pygame.draw.circle(
+            self.game_environment.screen, color, (self.pos.x, self.pos.y), self.size
+        )
+        self.bodycolor = color
+
+    def draw(self):
+        pygame.draw.circle(
+            self.game_environment.screen,
+            self.bodycolor,
+            (self.pos.x, self.pos.y),
+            self.size,
+        )
+
+    def update(self):
+        self.pos.x += self.vel.x
+        self.pos.y += self.vel.y
+        self.body.x = self.pos.x
+        self.body.y = self.pos.y
+
+
+# class Projectile
+
 # class GameSpells
 
 
@@ -167,6 +200,7 @@ class Actor:
         self.show_name = show_name
         self.actor_name = actor_name
         self.second_spell_last_time = pygame.time.get_ticks()
+        self.life = GameEnvironment.DEFAULTLIFE
 
     def draw(self):
         pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
@@ -235,6 +269,16 @@ class Actor:
     def should_show_name(self, onoff):
         self.show_name = onoff
 
+    def interact(self, projectile: Projectile):
+        print(
+            "Actor {} had {} life took {} damage".format(
+                self.actor_name, self.life, projectile.spell.damage
+            )
+        )
+        self.life -= projectile.spell.damage
+        if self.life <= 0:
+            self.game_environment.enemies.remove(self)
+
 
 # class Actor
 
@@ -262,37 +306,6 @@ class Surface:
 
 
 # class Surface
-
-
-class Projectile:
-    def __init__(self, owner, xpos, ypos, xvel, yvel, size, color, game_environment):
-        self.game_environment = game_environment
-        self.owner = owner
-        self.pos = pygame.Vector2(xpos, ypos)
-        self.vel = pygame.Vector2(xvel, yvel)
-        self.size = size
-        # will create a circle
-        self.body = pygame.draw.circle(
-            self.game_environment.screen, color, (self.pos.x, self.pos.y), self.size
-        )
-        self.bodycolor = color
-
-    def draw(self):
-        pygame.draw.circle(
-            self.game_environment.screen,
-            self.bodycolor,
-            (self.pos.x, self.pos.y),
-            self.size,
-        )
-
-    def update(self):
-        self.pos.x += self.vel.x
-        self.pos.y += self.vel.y
-        self.body.x = self.pos.x
-        self.body.y = self.pos.y
-
-
-# class Projectile
 
 
 class SpellCooldownDisplay:
@@ -449,8 +462,8 @@ def loop(game_environment: GameEnvironment):
                 # check if projectiles collide with enemies
                 for enemy in game_environment.enemies:
                     if enemy.body.colliderect(projectile.body):
-                        game_environment.enemies.remove(enemy)
                         game_environment.global_projectiles.remove(projectile)
+                        enemy.interact(projectile)
                 # check if projectilles collide with surfaces
                 for surface in game_environment.surfaces:
                     if surface.body.colliderect(projectile.body):
