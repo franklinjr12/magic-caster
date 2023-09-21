@@ -55,15 +55,14 @@ class Spell:
 
     def is_on_cooldown(self):
         current_time = pygame.time.get_ticks()
-        print(current_time)
         if current_time - self.cooldown_ticks > self.cooldown:
-            self.cooldown_ticks = pygame.time.get_ticks()
             return False
         return True
 
     def cast(self, game_environment, x, y, angle):
         if self.is_on_cooldown():
             return
+        self.cooldown_ticks = pygame.time.get_ticks()
         if self.description == "simple energy projectile":
             speed_x = game_environment.DEFAULTPROJECTILESPEED * math.cos(
                 math.radians(angle)
@@ -381,8 +380,11 @@ def setup(game_environment: GameEnvironment):
 
 
 def loop(game_environment: GameEnvironment):
-    q_spell_cooldown_display = SpellCooldownDisplay(
+    m1_spell_cooldown_display = SpellCooldownDisplay(
         "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
+    )
+    m2_spell_cooldown_display = SpellCooldownDisplay(
+        "M2", game_environment.player.second_spell, game_environment, 50, 10, 30
     )
     # game loop
     while game_environment.running:
@@ -489,7 +491,8 @@ def loop(game_environment: GameEnvironment):
         for enemy in game_environment.enemies:
             enemy.draw()
         game_environment.player.draw()
-        q_spell_cooldown_display.draw()
+        m1_spell_cooldown_display.draw()
+        m2_spell_cooldown_display.draw()
 
         # flip() the display to put your work on game_environment.screen
         pygame.display.flip()
