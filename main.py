@@ -36,6 +36,8 @@ class GameEnvironment:
 
 
 class Spell:
+    SLOWMODIFIER = "slow"
+
     def __init__(
         self,
         shape=None,
@@ -201,6 +203,7 @@ class Actor:
         self.actor_name = actor_name
         self.second_spell_last_time = pygame.time.get_ticks()
         self.life = GameEnvironment.DEFAULTLIFE
+        self.modifiers = []
 
     def draw(self):
         pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
@@ -271,10 +274,18 @@ class Actor:
 
     def interact(self, projectile: Projectile):
         print(
-            "Actor {} had {} life took {} damage".format(
-                self.actor_name, self.life, projectile.spell.damage
+            "Actor {} had {} life took {} damage and took {} modifiers".format(
+                self.actor_name,
+                self.life,
+                projectile.spell.damage,
+                projectile.spell.modifiers,
             )
         )
+        if projectile.spell.modifiers is not None:
+            for modifier in projectile.spell.modifiers:
+                # check if modifier is already on actor
+                if self.modifiers.count(modifier) == 0:
+                    self.modifiers.append(modifier)
         self.life -= projectile.spell.damage
         if self.life <= 0:
             self.game_environment.enemies.remove(self)
@@ -369,7 +380,7 @@ def setup(game_environment: GameEnvironment):
         shape={"type": "circle", "size": 2, "color": "blue"},
         effect="damage",
         element="ice",
-        modifiers=["slow"],
+        modifiers=[Spell.SLOWMODIFIER],
         description="3 shot energy projectile",
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
@@ -445,14 +456,18 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player_moving_right = False
         if game_environment.game_paused == False:
             if game_environment.player.can_update_move():
+                speed = game_environment.DEFAULTSPEED
+                # check if player has slow modifier
+                if game_environment.player.modifiers.count(Spell.SLOWMODIFIER) > 0:
+                    speed = speed / 2
                 if game_environment.player_moving_left:
                     game_environment.player.update(
-                        game_environment.player.pos.x - game_environment.DEFAULTSPEED,
+                        game_environment.player.pos.x - speed,
                         game_environment.player.pos.y,
                     )
                 if game_environment.player_moving_right:
                     game_environment.player.update(
-                        game_environment.player.pos.x + game_environment.DEFAULTSPEED,
+                        game_environment.player.pos.x + speed,
                         game_environment.player.pos.y,
                     )
             # check if player collides with projectiles
