@@ -222,8 +222,12 @@ class Actor:
         if newx != 0:
             if newx > self.pos.x:
                 self.facing = self.game_environment.FACINGRIGHT
+                if self.modifiers.count(Spell.SLOWMODIFIER) > 0:
+                    newx = newx - 1
             elif newx < self.pos.x:
                 self.facing = self.game_environment.FACINGLEFT
+                if self.modifiers.count(Spell.SLOWMODIFIER) > 0:
+                    newx = newx + 1
             self.pos.x = newx
             # check for border
             if self.pos.x < 0:
@@ -457,9 +461,6 @@ def loop(game_environment: GameEnvironment):
         if game_environment.game_paused == False:
             if game_environment.player.can_update_move():
                 speed = game_environment.DEFAULTSPEED
-                # check if player has slow modifier
-                if game_environment.player.modifiers.count(Spell.SLOWMODIFIER) > 0:
-                    speed = speed / 2
                 if game_environment.player_moving_left:
                     game_environment.player.update(
                         game_environment.player.pos.x - speed,
@@ -487,6 +488,7 @@ def loop(game_environment: GameEnvironment):
             game_environment.player.pos.y += game_environment.DEFAULTGRAVITY
             for enemy in game_environment.enemies:
                 enemy.pos.y += game_environment.DEFAULTGRAVITY
+                enemy.update(enemy.pos.x + 2, enemy.pos.y)
             # check if player collides with surfaces
             for surface in game_environment.surfaces:
                 if game_environment.player.body.colliderect(surface.body):
