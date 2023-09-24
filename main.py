@@ -206,8 +206,11 @@ class Actor:
         self.modifiers = []
 
     def draw(self):
+        # draws body
         pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
+        # draws health
         pygame.draw.rect(self.game_environment.screen, self.headcolor, self.head)
+        # show actor name
         if self.show_name:
             font = pygame.font.Font("freesansbold.ttf", 12)
             text = font.render(self.actor_name, True, (255, 255, 255))
@@ -217,6 +220,17 @@ class Actor:
                 self.pos.y - self.game_environment.DEFAULTRECTSIZE / 2,
             )
             self.game_environment.screen.blit(text, textRect)
+        # draw health bar
+        pygame.draw.rect(
+            self.game_environment.screen,
+            "green",
+            (
+                self.pos.x - self.game_environment.DEFAULTRECTSIZE / 2 - 6,
+                self.pos.y - self.game_environment.DEFAULTRECTSIZE / 2 - 8,
+                self.life / 2,
+                3,
+            ),
+        )
 
     def update(self, newx=0, newy=0):
         if newx != 0:
