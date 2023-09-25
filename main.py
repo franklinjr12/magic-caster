@@ -38,6 +38,7 @@ class GameEnvironment:
 
 class Spell:
     SLOWMODIFIER = "slow"
+    BURNMODIFIER = "burn"
 
     def __init__(
         self,
@@ -207,6 +208,7 @@ class Actor:
         self.modifiers = []
         self.xspeed = 0
         self.yspeed = 0
+        self.last_time_burn = 0
 
     def draw(self):
         # draws body
@@ -240,6 +242,13 @@ class Actor:
 
     def set_yspeed(self, speed):
         self.yspeed = speed
+
+    def can_take_burn_damage(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_time_burn > 100:
+            self.last_time_burn = pygame.time.get_ticks()
+            return True
+        return False
 
     def update(self, newx=0, newy=0):
         if newx != 0:
@@ -283,6 +292,10 @@ class Actor:
         else:
             self.head.x = self.pos.x - self.game_environment.DEFAULTRECTSIZE / 2
         self.head.y = self.pos.y
+        # check for burn modifier
+        if self.modifiers.count(Spell.BURNMODIFIER) > 0:
+            if self.can_take_burn_damage():
+                self.life -= 1
 
     def can_update_move(self):
         current_time = pygame.time.get_ticks()
@@ -411,7 +424,7 @@ def setup(game_environment: GameEnvironment):
         shape={"type": "circle", "size": 2, "color": "red"},
         effect="damage",
         element="energy",
-        modifiers=None,
+        modifiers=[Spell.BURNMODIFIER],
         description="simple energy projectile",
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
@@ -516,7 +529,7 @@ def loop(game_environment: GameEnvironment):
             game_environment.player.pos.y += game_environment.DEFAULTGRAVITY
             for enemy in game_environment.enemies:
                 enemy.pos.y += game_environment.DEFAULTGRAVITY
-                enemy.update(enemy.pos.x + 2, enemy.pos.y)
+                enemy.update(0, enemy.pos.y)
             # check if player collides with surfaces
             for surface in game_environment.surfaces:
                 if game_environment.player.body.colliderect(surface.body):
@@ -534,7 +547,10 @@ def loop(game_environment: GameEnvironment):
             for projectile in game_environment.global_projectiles:
                 projectile.update()
             for enemy in game_environment.enemies:
-                enemy.update(enemy.pos.x, enemy.pos.y)
+                if enemy.life <= 0:
+                    game_environment.enemies.remove(enemy)
+                else:
+                    enemy.update(enemy.pos.x, enemy.pos.y)
 
         # fill the game_environment.screen with a color to wipe away anything from last frame
         game_environment.screen.fill("black")
