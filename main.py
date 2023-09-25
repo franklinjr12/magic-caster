@@ -21,6 +21,7 @@ class GameEnvironment:
     DEFAULTSPELLCOOLDOWN = 1000
     DEFAULTLIFE = 100
     DEFAULTSPELLDAMAGE = 10
+    DEFAULTACTORSPEED = 1
     # globals
     global_projectiles = []
     game_paused = False
@@ -265,9 +266,11 @@ class Actor:
                 self.facing = self.game_environment.FACINGLEFT
                 if self.modifiers.count(Spell.SLOWMODIFIER) > 0:
                     self.xspeed = self.xspeed + 1
-            self.pos.x = self.xspeed
+            self.pos.x = self.pos.x + self.xspeed
         if self.yspeed != 0:
-            self.pos.y = newy + self.yspeed
+            self.pos.y = self.pos.y + self.yspeed
+        if newy != 0:
+            self.pos.y = newy
         # check for border
         if self.pos.y < 0:
             self.pos.y = 0
@@ -469,22 +472,16 @@ def loop(game_environment: GameEnvironment):
                     break
                 if event.key == pygame.K_a:
                     game_environment.player_moving_left = True
-                    # player.update(player.pos.x - game_environment.DEFAULTSPEED, player.pos.y)
                 if event.key == pygame.K_d:
                     game_environment.player_moving_right = True
-                    # player.update(player.pos.x + game_environment.DEFAULTSPEED, player.pos.y)
                 if event.key == pygame.K_w:
-                    game_environment.player.set_yspeed(-game_environment.DEFAULTSPEED)
-                    # game_environment.player.update(
-                    #     game_environment.player.pos.x,
-                    #     game_environment.player.pos.y - game_environment.DEFAULTSPEED,
-                    # )
+                    game_environment.player.set_yspeed(
+                        -game_environment.DEFAULTACTORSPEED
+                    )
                 if event.key == pygame.K_s:
-                    game_environment.player.set_yspeed(game_environment.DEFAULTSPEED)
-                    # game_environment.player.update(
-                    #     game_environment.player.pos.x,
-                    #     game_environment.player.pos.y + game_environment.DEFAULTSPEED,
-                    # )
+                    game_environment.player.set_yspeed(
+                        game_environment.DEFAULTACTORSPEED
+                    )
                 if event.key == pygame.K_q:
                     pass
             # check if key is still pressed
@@ -495,19 +492,13 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player_moving_right = False
         if game_environment.game_paused == False:
             if game_environment.player.can_update_move():
-                speed = game_environment.DEFAULTSPEED
+                xspeed = game_environment.DEFAULTACTORSPEED
                 if game_environment.player_moving_left:
-                    game_environment.player.set_xspeed(-speed)
-                    # game_environment.player.update(
-                    #     game_environment.player.pos.x - speed,
-                    #     game_environment.player.pos.y,
-                    # )
-                if game_environment.player_moving_right:
-                    game_environment.player.set_xspeed(-speed)
-                    # game_environment.player.update(
-                    #     game_environment.player.pos.x + speed,
-                    #     game_environment.player.pos.y,
-                    # )
+                    game_environment.player.set_xspeed(-xspeed)
+                elif game_environment.player_moving_right:
+                    game_environment.player.set_xspeed(xspeed)
+                else:
+                    game_environment.player.set_xspeed(0)
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
                 # if player.body.colliderect(projectile.body):
@@ -539,9 +530,6 @@ def loop(game_environment: GameEnvironment):
                         enemy.yspeed = 0
 
             # updates
-            # game_environment.player.update(
-            #     game_environment.player.pos.x, game_environment.player.pos.y
-            # )
             game_environment.player.update()
             for projectile in game_environment.global_projectiles:
                 projectile.update()
