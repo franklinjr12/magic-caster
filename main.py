@@ -555,6 +555,23 @@ def loop(game_environment: GameEnvironment):
         # fill the game_environment.screen with a color to wipe away anything from last frame
         game_environment.screen.fill("black")
 
+        if game_environment.game_paused == True:
+            mouse_pos = pygame.mouse.get_pos()
+            for enemy in game_environment.enemies:
+                if enemy.body.collidepoint(mouse_pos[0], mouse_pos[1]):
+                    # show enemy modifiers
+                    modifiers_str = "modifiers:"
+                    for modifier in enemy.modifiers:
+                        modifiers_str += modifier + " "
+                    font = pygame.font.Font("freesansbold.ttf", 12)
+                    text = font.render(modifiers_str, True, (255, 255, 255))
+                    textRect = text.get_rect()
+                    textRect.center = (
+                        mouse_pos[0],
+                        mouse_pos[1] - 50,
+                    )
+                    game_environment.screen.blit(text, textRect)
+
         # drawings
         for surface in game_environment.surfaces:
             surface.draw()
