@@ -12,7 +12,7 @@ class GameEnvironment:
     DEFAULTRECTSIZE = 15
     FACINGRIGHT = 1
     FACINGLEFT = -1
-    DEFAULTGRAVITY = 1
+    DEFAULTGRAVITY = 2
     DEFAULTPLAYERMOVEDELAY = 50
     DEFAULTPROJECTILESPEED = 3
     DEFAULTPROJECTILESIZE = 3
@@ -451,6 +451,8 @@ def setup(game_environment: GameEnvironment):
     game_environment.surfaces.append(floor)
     game_environment.player_moving_left = False
     game_environment.player_moving_right = False
+    game_environment.player_moving_up = False
+    game_environment.player_moving_down = False
     game_environment.enemies.append(
         Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
     )
@@ -488,13 +490,15 @@ def loop(game_environment: GameEnvironment):
                 if event.key == pygame.K_d:
                     game_environment.player_moving_right = True
                 if event.key == pygame.K_w:
-                    game_environment.player.set_yspeed(
-                        -game_environment.DEFAULTACTORSPEED
-                    )
+                    game_environment.player_moving_up = True
+                    # game_environment.player.set_yspeed(
+                    #     -game_environment.DEFAULTACTORSPEED
+                    # )
                 if event.key == pygame.K_s:
-                    game_environment.player.set_yspeed(
-                        game_environment.DEFAULTACTORSPEED
-                    )
+                    game_environment.player_moving_down = True
+                    # game_environment.player.set_yspeed(
+                    #     game_environment.DEFAULTACTORSPEED
+                    # )
                 if event.key == pygame.K_q:
                     pass
             # check if key is still pressed
@@ -503,6 +507,10 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player_moving_left = False
                 if event.key == pygame.K_d:
                     game_environment.player_moving_right = False
+                if event.key == pygame.K_w:
+                    game_environment.player_moving_up = False
+                if event.key == pygame.K_s:
+                    game_environment.player_moving_down = False
         if game_environment.game_paused == False:
             if game_environment.player.can_update_move():
                 xspeed = game_environment.DEFAULTACTORSPEED
@@ -512,6 +520,16 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player.set_xspeed(xspeed)
                 else:
                     game_environment.player.set_xspeed(0)
+                if game_environment.player_moving_up:
+                    game_environment.player.set_yspeed(
+                        -GameEnvironment.DEFAULTACTORSPEED
+                    )
+                elif game_environment.player_moving_down:
+                    game_environment.player.set_yspeed(
+                        GameEnvironment.DEFAULTACTORSPEED
+                    )
+                else:
+                    game_environment.player.set_yspeed(0)
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
                 # if player.body.colliderect(projectile.body):
@@ -571,6 +589,19 @@ def loop(game_environment: GameEnvironment):
                         mouse_pos[1] - 50,
                     )
                     game_environment.screen.blit(text, textRect)
+            # show player modifiers
+            if game_environment.player.body.collidepoint(mouse_pos[0], mouse_pos[1]):
+                modifiers_str = "modifiers:"
+                for modifier in game_environment.player.modifiers:
+                    modifiers_str += modifier + " "
+                font = pygame.font.Font("freesansbold.ttf", 12)
+                text = font.render(modifiers_str, True, (255, 255, 255))
+                textRect = text.get_rect()
+                textRect.center = (
+                    mouse_pos[0],
+                    mouse_pos[1] - 50,
+                )
+                game_environment.screen.blit(text, textRect)
 
         # drawings
         for surface in game_environment.surfaces:
