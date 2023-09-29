@@ -209,6 +209,8 @@ class Actor:
         self.xspeed = 0
         self.yspeed = 0
         self.last_time_burn = 0
+        self.first_spell = None
+        self.second_spell = None
 
     def draw(self):
         # draws body
@@ -310,17 +312,28 @@ class Actor:
         elif spell_number == self.game_environment.SECONDSPELL:
             self.second_spell = GameSpells.spells[spell_number]
 
-    def cast_spell(self, spell):
-        # get mouse position
-        mouse_pos = pygame.mouse.get_pos()
-        # get angle between player and mouse
-        angle = pygame.math.Vector2(
-            mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
-        ).angle_to((1, 0))
+    def cast_spell(self, spell, xpos=None, ypos=None):
+        angle = None
+        if xpos == None and ypos == None:
+            # get mouse position
+            mouse_pos = pygame.mouse.get_pos()
+            # get angle between player and mouse
+            angle = pygame.math.Vector2(
+                mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
+            ).angle_to((1, 0))
+        else:
+            angle = pygame.math.Vector2(xpos - self.pos.x, ypos - self.pos.y).angle_to(
+                (1, 0)
+            )
+        xpos = None
+        if self.facing == self.game_environment.FACINGLEFT:
+            xpos = self.pos.x - self.game_environment.DEFAULTRECTSIZE * 2
+        else:
+            xpos = self.pos.x + self.game_environment.DEFAULTRECTSIZE * 2
         if spell == self.game_environment.FIRSTSPELL:
-            self.first_spell.cast(self.game_environment, self.pos.x, self.pos.y, angle)
+            self.first_spell.cast(self.game_environment, xpos, self.pos.y, angle)
         if spell == self.game_environment.SECONDSPELL:
-            self.second_spell.cast(self.game_environment, self.pos.x, self.pos.y, angle)
+            self.second_spell.cast(self.game_environment, xpos, self.pos.y, angle)
 
     def should_show_name(self, onoff):
         self.show_name = onoff
@@ -491,14 +504,8 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player_moving_right = True
                 if event.key == pygame.K_w:
                     game_environment.player_moving_up = True
-                    # game_environment.player.set_yspeed(
-                    #     -game_environment.DEFAULTACTORSPEED
-                    # )
                 if event.key == pygame.K_s:
                     game_environment.player_moving_down = True
-                    # game_environment.player.set_yspeed(
-                    #     game_environment.DEFAULTACTORSPEED
-                    # )
                 if event.key == pygame.K_q:
                     pass
             # check if key is still pressed
@@ -530,10 +537,22 @@ def loop(game_environment: GameEnvironment):
                     )
                 else:
                     game_environment.player.set_yspeed(0)
+            # make enemy shoot at player
+            for enemy in game_environment.enemies:
+                if enemy.first_spell == None:
+                    enemy.set_spell(game_environment.FIRSTSPELL)
+                # shot spell at player pos
+                enemy.cast_spell(
+                    game_environment.FIRSTSPELL,
+                    game_environment.player.pos.x,
+                    game_environment.player.pos.y,
+                )
+
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
-                # if player.body.colliderect(projectile.body):
-                #     global_projectiles.remove(projectile)
+                if game_environment.player.body.colliderect(projectile.body):
+                    game_environment.global_projectiles.remove(projectile)
+                    game_environment.player.interact(projectile)
                 # check if projectiles collide with enemies
                 for enemy in game_environment.enemies:
                     if enemy.body.colliderect(projectile.body):
