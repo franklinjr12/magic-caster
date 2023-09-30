@@ -533,7 +533,7 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player.set_xspeed(0)
                 if game_environment.player_moving_up:
                     game_environment.player.set_yspeed(
-                        -GameEnvironment.DEFAULTACTORSPEED
+                        -GameEnvironment.DEFAULTACTORSPEED * 3
                     )
                 elif game_environment.player_moving_down:
                     game_environment.player.set_yspeed(
