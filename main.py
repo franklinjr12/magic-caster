@@ -19,6 +19,7 @@ class GameEnvironment:
     DEFAULTPROJECTILESIZE = 3
     FIRSTSPELL = 1
     SECONDSPELL = 2
+    THIRDSPELL = 3
     DEFAULTSPELLCOOLDOWN = 1000
     DEFAULTLIFE = 100
     DEFAULTSPELLDAMAGE = 10
@@ -41,13 +42,14 @@ class GameEnvironment:
 class Spell:
     SLOWMODIFIER = "slow"
     BURNMODIFIER = "burn"
+    WETMODIFIER = "wet"
 
     def __init__(
         self,
         shape=None,
         effect=None,
         element=None,
-        modifiers=None,
+        modifiers=[],
         description=None,
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
@@ -72,7 +74,7 @@ class Spell:
         if self.is_on_cooldown():
             return
         self.cooldown_ticks = pygame.time.get_ticks()
-        if self.description == "simple energy projectile":
+        if self.description == "simple projectile":
             speed_x = game_environment.DEFAULTPROJECTILESPEED * math.cos(
                 math.radians(angle)
             )
@@ -92,7 +94,7 @@ class Spell:
                         game_environment,
                     )
                 )
-        elif self.description == "3 shot energy projectile":
+        elif self.description == "3 shot projectile":
             speed_x = game_environment.DEFAULTPROJECTILESPEED * math.cos(
                 math.radians(angle)
             )
@@ -137,12 +139,39 @@ class Spell:
                     )
                 )
 
+    def cast_failed_spell(xpos, ypos):
+        # will cast some gray particles
+        print("failed to cast spell")
+
 
 # class Spell
 
 
 class GameSpells:
     spells = {}
+
+
+# class GameSpells
+
+
+class SpellCombination:
+    def create_spell_combination(spell1: Spell, spell2: Spell):
+        # always create a new instance of Spell class
+        spellCombo = Spell(modifiers=[])
+        if spell1.is_projectile == True and spell2.is_projectile == True:
+            spellCombo.is_projectile = True
+            spellCombo.shape = copy.deepcopy(spell1.shape)
+            spellCombo.description = copy.deepcopy(spell1.description)
+        if spell1.element == "fire" and spell2.element == "ice":
+            spellCombo.element = "water"
+            spellCombo.shape["color"] = "blue"
+            spellCombo.modifiers.append(Spell.WETMODIFIER)
+        if spellCombo.shape == None or spellCombo.element == None:
+            return None
+        return spellCombo
+
+
+# class SpellCombination
 
 
 class Projectile:
@@ -296,7 +325,7 @@ class Actor:
         else:
             self.head.x = self.pos.x - self.game_environment.DEFAULTRECTSIZE / 2
         self.head.y = self.pos.y
-        # check for burn modifier
+        # check for burn modifier is present on modifiers array
         if self.modifiers.count(Spell.BURNMODIFIER) > 0:
             if self.can_take_burn_damage():
                 self.life -= 1
@@ -308,13 +337,10 @@ class Actor:
             return True
         return False
 
-    def set_spell(self, spell_number):
-        if spell_number == self.game_environment.FIRSTSPELL:
-            # self.first_spell = GameSpells.spells[spell_number]
-            # how to make a copy of the variable instead of a reference
+    def set_spell(self, position, spell_number):
+        if position == self.game_environment.FIRSTSPELL:
             self.first_spell = copy.deepcopy(GameSpells.spells[spell_number])
-        elif spell_number == self.game_environment.SECONDSPELL:
-            # self.second_spell = GameSpells.spells[spell_number]
+        elif position == self.game_environment.SECONDSPELL:
             self.second_spell = copy.deepcopy(GameSpells.spells[spell_number])
 
     def cast_spell(self, spell, xpos=None, ypos=None):
@@ -339,6 +365,15 @@ class Actor:
             self.first_spell.cast(self.game_environment, xpos, self.pos.y, angle)
         if spell == self.game_environment.SECONDSPELL:
             self.second_spell.cast(self.game_environment, xpos, self.pos.y, angle)
+        if spell == self.game_environment.THIRDSPELL:
+            if self.first_spell != None and self.second_spell != None:
+                s = SpellCombination.create_spell_combination(
+                    self.first_spell, self.second_spell
+                )
+                if s != None:
+                    s.cast(self.game_environment, xpos, self.pos.y, angle)
+                else:
+                    Spell.cast_failed_spell(xpos, self.pos.y)
 
     def should_show_name(self, onoff):
         self.show_name = onoff
@@ -439,26 +474,40 @@ def setup(game_environment: GameEnvironment):
         game_environment,
     )
     GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
-        shape={"type": "circle", "size": 2, "color": "red"},
+        shape={"type": "circle", "size": 2, "color": "yellow"},
         effect="damage",
         element="energy",
-        modifiers=[Spell.BURNMODIFIER],
-        description="simple energy projectile",
+        modifiers=[],
+        description="simple projectile",
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
     )
+
     GameSpells.spells[GameEnvironment.SECONDSPELL] = Spell(
         shape={"type": "circle", "size": 2, "color": "blue"},
         effect="damage",
         element="ice",
         modifiers=[Spell.SLOWMODIFIER],
-        description="3 shot energy projectile",
+        description="3 shot projectile",
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
     )
+    GameSpells.spells[GameEnvironment.THIRDSPELL] = Spell(
+        shape={"type": "circle", "size": 2, "color": "red"},
+        effect="damage",
+        element="fire",
+        modifiers=[Spell.BURNMODIFIER],
+        description="simple projectile",
+        is_projectile=True,
+        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    )
     # put first spell on player.set_spell
-    game_environment.player.set_spell(game_environment.FIRSTSPELL)
-    game_environment.player.set_spell(game_environment.SECONDSPELL)
+    game_environment.player.set_spell(
+        game_environment.FIRSTSPELL, game_environment.THIRDSPELL
+    )
+    game_environment.player.set_spell(
+        game_environment.SECONDSPELL, game_environment.SECONDSPELL
+    )
     floor = Surface(
         0,
         game_environment.HEIGHT - game_environment.HEIGHT * 0.1,
@@ -513,6 +562,8 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player.cast_spell(game_environment.FIRSTSPELL)
                 if mouse_buttons[2] == True:
                     game_environment.player.cast_spell(game_environment.SECONDSPELL)
+                if mouse_buttons[1] == True:
+                    game_environment.player.cast_spell(game_environment.THIRDSPELL)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     game_environment.game_paused = not game_environment.game_paused
@@ -566,7 +617,9 @@ def loop(game_environment: GameEnvironment):
             if GameEnvironment.enemies_shoot_at_player == True:
                 for enemy in game_environment.enemies:
                     if enemy.first_spell == None:
-                        enemy.set_spell(game_environment.FIRSTSPELL)
+                        enemy.set_spell(
+                            game_environment.FIRSTSPELL, game_environment.FIRSTSPELL
+                        )
                     # shot spell at player pos
                     enemy.cast_spell(
                         game_environment.FIRSTSPELL,
