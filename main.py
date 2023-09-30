@@ -32,6 +32,7 @@ class GameEnvironment:
     screen = None
     clock = None
     running = True
+    enemies_shoot_at_player = False
 
 
 # class Game
@@ -528,6 +529,10 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player_moving_down = True
                 if event.key == pygame.K_q:
                     pass
+                if event.key == pygame.K_p:
+                    GameEnvironment.enemies_shoot_at_player = (
+                        not GameEnvironment.enemies_shoot_at_player
+                    )
             # check if key is still pressed
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
@@ -558,16 +563,16 @@ def loop(game_environment: GameEnvironment):
                 else:
                     game_environment.player.set_yspeed(0)
             # make enemy shoot at player
-            for enemy in game_environment.enemies:
-                if enemy.first_spell == None:
-                    enemy.set_spell(game_environment.FIRSTSPELL)
-                # shot spell at player pos
-                enemy.cast_spell(
-                    game_environment.FIRSTSPELL,
-                    game_environment.player.pos.x,
-                    game_environment.player.pos.y,
-                )
-
+            if GameEnvironment.enemies_shoot_at_player == True:
+                for enemy in game_environment.enemies:
+                    if enemy.first_spell == None:
+                        enemy.set_spell(game_environment.FIRSTSPELL)
+                    # shot spell at player pos
+                    enemy.cast_spell(
+                        game_environment.FIRSTSPELL,
+                        game_environment.player.pos.x,
+                        game_environment.player.pos.y,
+                    )
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
                 if game_environment.player.body.colliderect(projectile.body):
