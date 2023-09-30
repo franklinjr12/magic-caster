@@ -2,6 +2,7 @@
 import pygame
 import random
 import math
+import copy
 
 
 class GameEnvironment:
@@ -308,9 +309,12 @@ class Actor:
 
     def set_spell(self, spell_number):
         if spell_number == self.game_environment.FIRSTSPELL:
-            self.first_spell = GameSpells.spells[spell_number]
+            # self.first_spell = GameSpells.spells[spell_number]
+            # how to make a copy of the variable instead of a reference
+            self.first_spell = copy.deepcopy(GameSpells.spells[spell_number])
         elif spell_number == self.game_environment.SECONDSPELL:
-            self.second_spell = GameSpells.spells[spell_number]
+            # self.second_spell = GameSpells.spells[spell_number]
+            self.second_spell = copy.deepcopy(GameSpells.spells[spell_number])
 
     def cast_spell(self, spell, xpos=None, ypos=None):
         angle = None
