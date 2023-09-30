@@ -465,7 +465,23 @@ def setup(game_environment: GameEnvironment):
         4,
         game_environment,
     )
+    platform1 = Surface(
+        game_environment.WIDTH / 2 + 100,
+        game_environment.HEIGHT / 2,
+        game_environment.WIDTH,
+        4,
+        game_environment,
+    )
+    platform2 = Surface(
+        0,
+        game_environment.HEIGHT / 4,
+        game_environment.WIDTH / 2 - 300,
+        4,
+        game_environment,
+    )
     game_environment.surfaces.append(floor)
+    game_environment.surfaces.append(platform1)
+    game_environment.surfaces.append(platform2)
     game_environment.player_moving_left = False
     game_environment.player_moving_right = False
     game_environment.player_moving_up = False
