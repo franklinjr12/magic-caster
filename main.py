@@ -204,8 +204,6 @@ class Projectile:
 
 # class Projectile
 
-# class GameSpells
-
 
 class Actor:
     def __init__(
@@ -456,6 +454,36 @@ class SpellCooldownDisplay:
 
 
 # class SpellCooldownDisplay
+
+
+# show inputs on screen
+class InputsDrawer:
+    screen = None
+
+    def drawKey(key, xpos, ypos, size):
+        color = "white"
+        # make rectangle on xpos and ypox
+        pygame.draw.rect(
+            GameEnvironment.screen,
+            color,
+            (xpos, ypos, size, size),
+        )
+        # draw key letter on rectangle
+        font = pygame.font.Font("freesansbold.ttf", 12)
+        text = font.render(key, True, (0, 0, 0))
+        textRect = text.get_rect()
+        textRect.center = (
+            xpos + size / 2,
+            ypos + size / 2,
+        )
+        GameEnvironment.screen.blit(text, textRect)
+
+    def drawKeys():
+        xpos = GameEnvironment.WIDTH - 40
+        InputsDrawer.drawKey("W", xpos, 10, 30)
+
+
+# class InputsDrawer
 
 
 def setup(game_environment: GameEnvironment):
@@ -710,6 +738,7 @@ def loop(game_environment: GameEnvironment):
         game_environment.player.draw()
         m1_spell_cooldown_display.draw()
         m2_spell_cooldown_display.draw()
+        InputsDrawer.drawKeys()
 
         # flip() the display to put your work on game_environment.screen
         pygame.display.flip()
