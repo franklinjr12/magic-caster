@@ -460,27 +460,40 @@ class SpellCooldownDisplay:
 class InputsDrawer:
     screen = None
 
-    def drawKey(key, xpos, ypos, size):
+    def drawKey(game_environment, key, xpos, ypos, sizex, sizey):
         color = "white"
         # make rectangle on xpos and ypox
         pygame.draw.rect(
-            GameEnvironment.screen,
+            game_environment.screen,
             color,
-            (xpos, ypos, size, size),
+            (xpos, ypos, sizex, sizey),
         )
         # draw key letter on rectangle
         font = pygame.font.Font("freesansbold.ttf", 12)
         text = font.render(key, True, (0, 0, 0))
         textRect = text.get_rect()
         textRect.center = (
-            xpos + size / 2,
-            ypos + size / 2,
+            xpos + sizex / 2,
+            ypos + sizey / 2,
         )
-        GameEnvironment.screen.blit(text, textRect)
+        game_environment.screen.blit(text, textRect)
+        pass
 
-    def drawKeys():
+    def drawKeys(game_environemnt: GameEnvironment):
         xpos = GameEnvironment.WIDTH - 40
-        InputsDrawer.drawKey("W", xpos, 10, 30)
+        ypos = 60
+        size = 30
+        InputsDrawer.drawKey(game_environemnt, "D", xpos, ypos, size, size)
+        xpos -= 40
+        InputsDrawer.drawKey(game_environemnt, "S", xpos, ypos, size, size)
+        InputsDrawer.drawKey(game_environemnt, "W", xpos, ypos - 40, size, size)
+        xpos -= 40
+        InputsDrawer.drawKey(game_environemnt, "A", xpos, ypos, size, size)
+        xpos = GameEnvironment.WIDTH - 40
+        ypos += 40
+        InputsDrawer.drawKey(game_environemnt, "P", xpos, ypos, size, size)
+        xpos -= 80
+        InputsDrawer.drawKey(game_environemnt, "SPACE", xpos, ypos, size * 2, size)
 
 
 # class InputsDrawer
@@ -738,7 +751,7 @@ def loop(game_environment: GameEnvironment):
         game_environment.player.draw()
         m1_spell_cooldown_display.draw()
         m2_spell_cooldown_display.draw()
-        InputsDrawer.drawKeys()
+        InputsDrawer.drawKeys(game_environment)
 
         # flip() the display to put your work on game_environment.screen
         pygame.display.flip()
