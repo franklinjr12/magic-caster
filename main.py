@@ -20,6 +20,7 @@ class GameEnvironment:
     FIRSTSPELL = 1
     SECONDSPELL = 2
     THIRDSPELL = 3
+    FORTHSPELL = 4
     DEFAULTSPELLCOOLDOWN = 1000
     DEFAULTLIFE = 100
     DEFAULTSPELLDAMAGE = 10
@@ -43,6 +44,7 @@ class Spell:
     SLOWMODIFIER = "slow"
     BURNMODIFIER = "burn"
     WETMODIFIER = "wet"
+    POISONMODIFIER = "poison"
 
     def __init__(
         self,
@@ -138,6 +140,25 @@ class Spell:
                         game_environment,
                     )
                 )
+        elif self.description == "arrow projectile":
+            speed_x = game_environment.DEFAULTPROJECTILESPEED * math.cos(
+                math.radians(angle)
+            )
+            speed_y = -(
+                game_environment.DEFAULTPROJECTILESPEED * math.sin(math.radians(angle))
+            )
+            game_environment.global_projectiles.append(
+                ArrowProjectile(
+                    self,
+                    x,
+                    y,
+                    speed_x,
+                    speed_y,
+                    self.shape["size"],
+                    self.shape["color"],
+                    game_environment,
+                )
+            )
 
     def cast_failed_spell(xpos, ypos):
         # will cast some gray particles
@@ -203,6 +224,21 @@ class Projectile:
 
 
 # class Projectile
+
+
+class ArrowProjectile(Projectile):
+    def draw(self):
+        endx = self.pos.x + self.size * (self.vel.x)
+        endy = self.pos.y + self.size * (self.vel.y)
+        pygame.draw.line(
+            self.game_environment.screen,
+            self.bodycolor,
+            (self.pos.x, self.pos.y),
+            (endx, endy),
+        )
+
+
+# class ArrowProjectile
 
 
 class Actor:
@@ -281,6 +317,13 @@ class Actor:
             return True
         return False
 
+    def can_take_poison_damage(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_time_burn > 100:
+            self.last_time_burn = pygame.time.get_ticks()
+            return True
+        return False
+
     def update(self, newx=0, newy=0):
         if newx != 0:
             if newx > self.pos.x:
@@ -326,6 +369,9 @@ class Actor:
         # check for burn modifier is present on modifiers array
         if self.modifiers.count(Spell.BURNMODIFIER) > 0:
             if self.can_take_burn_damage():
+                self.life -= 1
+        if self.modifiers.count(Spell.POISONMODIFIER) > 0:
+            if self.can_take_poison_damage():
                 self.life -= 1
 
     def can_update_move(self):
@@ -542,9 +588,18 @@ def setup(game_environment: GameEnvironment):
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
     )
+    GameSpells.spells[GameEnvironment.FORTHSPELL] = Spell(
+        shape={"type": "line", "size": 5, "color": "green"},
+        effect="damage",
+        element="venom",
+        modifiers=[Spell.POISONMODIFIER],
+        description="arrow projectile",
+        is_projectile=True,
+        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    )
     # put first spell on player.set_spell
     game_environment.player.set_spell(
-        game_environment.FIRSTSPELL, game_environment.THIRDSPELL
+        game_environment.FIRSTSPELL, game_environment.FORTHSPELL
     )
     game_environment.player.set_spell(
         game_environment.SECONDSPELL, game_environment.SECONDSPELL
