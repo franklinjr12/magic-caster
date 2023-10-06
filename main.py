@@ -169,7 +169,30 @@ class Spell:
 
 
 class GameSpells:
-    spells = {}
+    spells = []
+
+    def show_all_spells(game_environment: GameEnvironment):
+        xpos = GameEnvironment.WIDTH / 2
+        ypos = GameEnvironment.HEIGHT / 2
+        size = 30
+        for spell in GameSpells.spells:
+            color = spell.shape["color"]
+            # make rectangle on xpos and ypox
+            pygame.draw.rect(
+                game_environment.screen,
+                color,
+                (xpos, ypos, size, size),
+            )
+            # draw key letter on rectangle
+            font = pygame.font.Font("freesansbold.ttf", 6)
+            text = font.render(spell.description, True, (0, 0, 0))
+            textRect = text.get_rect()
+            textRect.center = (
+                xpos + size / 2,
+                ypos + size / 2,
+            )
+            game_environment.screen.blit(text, textRect)
+            xpos += size + size / 2
 
 
 # class GameSpells
@@ -382,6 +405,7 @@ class Actor:
         return False
 
     def set_spell(self, position, spell_number):
+        spell_number -= 1
         if position == self.game_environment.FIRSTSPELL:
             self.first_spell = copy.deepcopy(GameSpells.spells[spell_number])
         elif position == self.game_environment.SECONDSPELL:
@@ -560,42 +584,63 @@ def setup(game_environment: GameEnvironment):
         "Player",
         game_environment,
     )
-    GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
-        shape={"type": "circle", "size": 2, "color": "yellow"},
-        effect="damage",
-        element="energy",
-        modifiers=[],
-        description="simple projectile",
-        is_projectile=True,
-        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    # pre alloc index on GameSpells.spells
+    GameSpells.spells.insert(
+        GameEnvironment.FIRSTSPELL,
+        Spell(
+            shape={"type": "circle", "size": 2, "color": "yellow"},
+            effect="damage",
+            element="energy",
+            modifiers=[],
+            description="simple projectile",
+            is_projectile=True,
+            cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+        ),
     )
-
-    GameSpells.spells[GameEnvironment.SECONDSPELL] = Spell(
-        shape={"type": "circle", "size": 2, "color": "blue"},
-        effect="damage",
-        element="ice",
-        modifiers=[Spell.SLOWMODIFIER],
-        description="3 shot projectile",
-        is_projectile=True,
-        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
+    # GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
+    #     shape={"type": "circle", "size": 2, "color": "yellow"},
+    #     effect="damage",
+    #     element="energy",
+    #     modifiers=[],
+    #     description="simple projectile",
+    #     is_projectile=True,
+    #     cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    # )
+    GameSpells.spells.insert(
+        GameEnvironment.SECONDSPELL,
+        Spell(
+            shape={"type": "circle", "size": 2, "color": "blue"},
+            effect="damage",
+            element="ice",
+            modifiers=[Spell.SLOWMODIFIER],
+            description="3 shot projectile",
+            is_projectile=True,
+            cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
+        ),
     )
-    GameSpells.spells[GameEnvironment.THIRDSPELL] = Spell(
-        shape={"type": "circle", "size": 2, "color": "red"},
-        effect="damage",
-        element="fire",
-        modifiers=[Spell.BURNMODIFIER],
-        description="simple projectile",
-        is_projectile=True,
-        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    GameSpells.spells.insert(
+        GameEnvironment.THIRDSPELL,
+        Spell(
+            shape={"type": "circle", "size": 2, "color": "red"},
+            effect="damage",
+            element="fire",
+            modifiers=[Spell.BURNMODIFIER],
+            description="simple projectile",
+            is_projectile=True,
+            cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+        ),
     )
-    GameSpells.spells[GameEnvironment.FORTHSPELL] = Spell(
-        shape={"type": "line", "size": 5, "color": "green"},
-        effect="damage",
-        element="venom",
-        modifiers=[Spell.POISONMODIFIER],
-        description="arrow projectile",
-        is_projectile=True,
-        cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+    GameSpells.spells.insert(
+        GameEnvironment.FORTHSPELL,
+        Spell(
+            shape={"type": "line", "size": 5, "color": "green"},
+            effect="damage",
+            element="venom",
+            modifiers=[Spell.POISONMODIFIER],
+            description="arrow projectile",
+            is_projectile=True,
+            cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+        ),
     )
     # put first spell on player.set_spell
     game_environment.player.set_spell(
@@ -768,6 +813,7 @@ def loop(game_environment: GameEnvironment):
 
         if game_environment.game_paused == True:
             mouse_pos = pygame.mouse.get_pos()
+            GameSpells.show_all_spells(game_environment)
             for enemy in game_environment.enemies:
                 if enemy.body.collidepoint(mouse_pos[0], mouse_pos[1]):
                     # show enemy modifiers
