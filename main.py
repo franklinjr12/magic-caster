@@ -171,27 +171,30 @@ class Spell:
 class GameSpells:
     spells = []
 
+    # show all spells on screen when paused
     def show_all_spells(game_environment: GameEnvironment):
-        xpos = GameEnvironment.WIDTH / 2
-        ypos = GameEnvironment.HEIGHT / 2
-        size = 30
+        xpos = GameEnvironment.WIDTH / 3
+        ypos = GameEnvironment.HEIGHT / 4
+        size = 60
         for spell in GameSpells.spells:
             color = spell.shape["color"]
-            # make rectangle on xpos and ypox
             pygame.draw.rect(
                 game_environment.screen,
                 color,
                 (xpos, ypos, size, size),
             )
-            # draw key letter on rectangle
-            font = pygame.font.Font("freesansbold.ttf", 6)
-            text = font.render(spell.description, True, (0, 0, 0))
-            textRect = text.get_rect()
-            textRect.center = (
-                xpos + size / 2,
-                ypos + size / 2,
-            )
-            game_environment.screen.blit(text, textRect)
+            spell_description = spell.description.split(" ")
+            y = ypos
+            for s in spell_description:
+                font = pygame.font.Font("freesansbold.ttf", 12)
+                text = font.render(s, True, (0, 0, 0))
+                textRect = text.get_rect()
+                textRect.center = (
+                    xpos + size / 2,
+                    y + 10,
+                )
+                game_environment.screen.blit(text, textRect)
+                y += 10
             xpos += size + size / 2
 
 
