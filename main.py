@@ -170,12 +170,16 @@ class Spell:
 
 class GameSpells:
     spells = []
+    spells_square_size = 60
+    spells_initial_x = GameEnvironment.WIDTH / 3
+    spells_initial_y = GameEnvironment.HEIGHT / 4
+    spells_square_spacing = spells_square_size + spells_square_size / 2
 
     # show all spells on screen when paused
     def show_all_spells(game_environment: GameEnvironment):
-        xpos = GameEnvironment.WIDTH / 3
-        ypos = GameEnvironment.HEIGHT / 4
-        size = 60
+        xpos = GameSpells.spells_initial_x
+        ypos = GameSpells.spells_initial_y
+        size = GameSpells.spells_square_size
         for spell in GameSpells.spells:
             color = spell.shape["color"]
             pygame.draw.rect(
@@ -195,7 +199,19 @@ class GameSpells:
                 )
                 game_environment.screen.blit(text, textRect)
                 y += 10
-            xpos += size + size / 2
+            xpos += GameSpells.spells_square_spacing
+        # draw empty rectangle around all spells
+        pygame.draw.rect(
+            game_environment.screen,
+            "white",
+            (
+                GameSpells.spells_initial_x,
+                GameSpells.spells_initial_y,
+                GameSpells.spells_square_spacing * len(GameSpells.spells),
+                GameSpells.spells_square_size,
+            ),
+            2,
+        )
 
 
 # class GameSpells
@@ -702,6 +718,29 @@ def loop(game_environment: GameEnvironment):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # check if left mouse clicked
                 mouse_buttons = pygame.mouse.get_pressed()
+                if game_environment.game_paused == True:
+                    # check if mouse clicked on spell
+                    if mouse_buttons[0] == True:
+                        # check if mouse clicked on spell
+                        mouse_pos = pygame.mouse.get_pos()
+                        xpos = GameSpells.spells_initial_x
+                        ypos = GameSpells.spells_initial_y
+                        for spell in GameSpells.spells:
+                            if (
+                                xpos
+                                < mouse_pos[0]
+                                < xpos + GameSpells.spells_square_size
+                                and ypos
+                                < mouse_pos[1]
+                                < ypos + GameSpells.spells_square_size
+                            ):
+                                game_environment.player.set_spell(
+                                    game_environment.FIRSTSPELL,
+                                    GameSpells.spells.index(spell) + 1,
+                                )
+                                break
+                            xpos += GameSpells.spells_square_spacing
+                    break
                 if mouse_buttons[0] == True:
                     game_environment.player.cast_spell(game_environment.FIRSTSPELL)
                 if mouse_buttons[2] == True:
