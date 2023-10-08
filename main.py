@@ -35,6 +35,8 @@ class GameEnvironment:
     clock = None
     running = True
     enemies_shoot_at_player = False
+    m1_spell_cooldown = None
+    m2_spell_cooldown = None
 
 
 # class Game
@@ -616,15 +618,6 @@ def setup(game_environment: GameEnvironment):
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
         ),
     )
-    # GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
-    #     shape={"type": "circle", "size": 2, "color": "yellow"},
-    #     effect="damage",
-    #     element="energy",
-    #     modifiers=[],
-    #     description="simple projectile",
-    #     is_projectile=True,
-    #     cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
-    # )
     GameSpells.spells.insert(
         GameEnvironment.SECONDSPELL,
         Spell(
@@ -699,15 +692,15 @@ def setup(game_environment: GameEnvironment):
     game_environment.enemies.append(
         Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
     )
+    game_environment.m1_spell_cooldown = SpellCooldownDisplay(
+        "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
+    )
+    game_environment.m2_spell_cooldown = SpellCooldownDisplay(
+        "M2", game_environment.player.second_spell, game_environment, 50, 10, 30
+    )
 
 
 def loop(game_environment: GameEnvironment):
-    m1_spell_cooldown_display = SpellCooldownDisplay(
-        "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
-    )
-    m2_spell_cooldown_display = SpellCooldownDisplay(
-        "M2", game_environment.player.second_spell, game_environment, 50, 10, 30
-    )
     # game loop
     while game_environment.running:
         # logics
@@ -720,26 +713,37 @@ def loop(game_environment: GameEnvironment):
                 mouse_buttons = pygame.mouse.get_pressed()
                 if game_environment.game_paused == True:
                     # check if mouse clicked on spell
-                    if mouse_buttons[0] == True:
-                        # check if mouse clicked on spell
-                        mouse_pos = pygame.mouse.get_pos()
-                        xpos = GameSpells.spells_initial_x
-                        ypos = GameSpells.spells_initial_y
-                        for spell in GameSpells.spells:
-                            if (
-                                xpos
-                                < mouse_pos[0]
-                                < xpos + GameSpells.spells_square_size
-                                and ypos
-                                < mouse_pos[1]
-                                < ypos + GameSpells.spells_square_size
-                            ):
-                                game_environment.player.set_spell(
-                                    game_environment.FIRSTSPELL,
-                                    GameSpells.spells.index(spell) + 1,
+                    spell_position = GameEnvironment.FIRSTSPELL
+                    if mouse_buttons[2] == True:
+                        spell_position = GameEnvironment.SECONDSPELL
+                    mouse_pos = pygame.mouse.get_pos()
+                    xpos = GameSpells.spells_initial_x
+                    ypos = GameSpells.spells_initial_y
+                    for spell in GameSpells.spells:
+                        if (
+                            xpos
+                            < mouse_pos[0]
+                            < xpos + GameSpells.spells_square_size
+                            and ypos
+                            < mouse_pos[1]
+                            < ypos + GameSpells.spells_square_size
+                        ):
+                            game_environment.player.set_spell(
+                                spell_position,
+                                GameSpells.spells.index(spell) + 1,
+                            )
+                            if spell_position == GameEnvironment.FIRSTSPELL:
+                                game_environment.m1_spell_cooldown = SpellCooldownDisplay(
+                                    "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
                                 )
-                                break
-                            xpos += GameSpells.spells_square_spacing
+                            else:
+                                game_environment.m2_spell_cooldown = SpellCooldownDisplay(
+                                    "M2", game_environment.player.second_spell, game_environment, 50, 10, 30
+                                )
+                            break
+                        xpos += GameSpells.spells_square_spacing
+                    
+                        # check if mouse clicked on spell
                     break
                 if mouse_buttons[0] == True:
                     game_environment.player.cast_spell(game_environment.FIRSTSPELL)
@@ -892,8 +896,8 @@ def loop(game_environment: GameEnvironment):
         for enemy in game_environment.enemies:
             enemy.draw()
         game_environment.player.draw()
-        m1_spell_cooldown_display.draw()
-        m2_spell_cooldown_display.draw()
+        game_environment.m1_spell_cooldown.draw()
+        game_environment.m2_spell_cooldown.draw()
         InputsDrawer.drawKeys(game_environment)
 
         # flip() the display to put your work on game_environment.screen
