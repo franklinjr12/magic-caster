@@ -21,6 +21,7 @@ class GameEnvironment:
     SECONDSPELL = 2
     THIRDSPELL = 3
     FORTHSPELL = 4
+    FIFTHSPELL = 5
     DEFAULTSPELLCOOLDOWN = 1000
     DEFAULTLIFE = 100
     DEFAULTSPELLDAMAGE = 10
@@ -45,6 +46,17 @@ class Spell:
     BURNMODIFIER = "burn"
     WETMODIFIER = "wet"
     POISONMODIFIER = "poison"
+    LIGHTNINGMODIFIER = "lightning"
+    RADIOACTIVEMODIFIER = "radioactive"
+
+    FIREELEMENT = "fire"
+    ICEELEMENT = "ice"
+    WATERELEMENT = "water"
+    EARTHELEMENT = "earth"
+    ENERGYELEMENT = "energy"
+    VENOMELEMENT = "venom"
+    LIGHTNINGELEMENT = "lightning"
+    RADIOACTIVEELEMENT = "radioactive"
 
     def __init__(
         self,
@@ -220,15 +232,32 @@ class GameSpells:
 class SpellCombination:
     def create_spell_combination(spell1: Spell, spell2: Spell):
         # always create a new instance of Spell class
-        spellCombo = Spell(modifiers=[])
+        spellCombo = Spell()
+        # check projectile
         if spell1.is_projectile == True and spell2.is_projectile == True:
             spellCombo.is_projectile = True
             spellCombo.shape = copy.deepcopy(spell1.shape)
             spellCombo.description = copy.deepcopy(spell1.description)
-        if spell1.element == "fire" and spell2.element == "ice":
-            spellCombo.element = "water"
+        # check elements
+        if (
+            spell1.element == Spell.FIREELEMENT and spell2.element == Spell.ICEELEMENT
+        ) or (
+            spell2.element == Spell.FIREELEMENT and spell1.element == Spell.ICEELEMENT
+        ):
+            spellCombo.element = Spell.WATERELEMENT
             spellCombo.shape["color"] = "blue"
             spellCombo.modifiers.append(Spell.WETMODIFIER)
+        if (
+            spell1.element == Spell.FIREELEMENT
+            and spell2.element == Spell.LIGHTNINGELEMENT
+        ) or (
+            spell2.element == Spell.FIREELEMENT
+            and spell1.element == Spell.LIGHTNINGELEMENT
+        ):
+            spellCombo.element = Spell.RADIOACTIVEELEMENT
+            spellCombo.shape["color"] = "green"
+            spellCombo.modifiers.append(Spell.RADIOACTIVEMODIFIER)
+        # check shape
         if spellCombo.shape == None or spellCombo.element == None:
             return None
         return spellCombo
@@ -609,28 +638,19 @@ def setup(game_environment: GameEnvironment):
         Spell(
             shape={"type": "circle", "size": 2, "color": "yellow"},
             effect="damage",
-            element="energy",
+            element=Spell.ENERGYELEMENT,
             modifiers=[],
             description="simple projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
         ),
     )
-    # GameSpells.spells[GameEnvironment.FIRSTSPELL] = Spell(
-    #     shape={"type": "circle", "size": 2, "color": "yellow"},
-    #     effect="damage",
-    #     element="energy",
-    #     modifiers=[],
-    #     description="simple projectile",
-    #     is_projectile=True,
-    #     cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
-    # )
     GameSpells.spells.insert(
         GameEnvironment.SECONDSPELL,
         Spell(
             shape={"type": "circle", "size": 2, "color": "blue"},
             effect="damage",
-            element="ice",
+            element=Spell.ICEELEMENT,
             modifiers=[Spell.SLOWMODIFIER],
             description="3 shot projectile",
             is_projectile=True,
@@ -642,7 +662,7 @@ def setup(game_environment: GameEnvironment):
         Spell(
             shape={"type": "circle", "size": 2, "color": "red"},
             effect="damage",
-            element="fire",
+            element=Spell.FIREELEMENT,
             modifiers=[Spell.BURNMODIFIER],
             description="simple projectile",
             is_projectile=True,
@@ -654,16 +674,28 @@ def setup(game_environment: GameEnvironment):
         Spell(
             shape={"type": "line", "size": 5, "color": "green"},
             effect="damage",
-            element="venom",
+            element=Spell.VENOMELEMENT,
             modifiers=[Spell.POISONMODIFIER],
             description="arrow projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
         ),
     )
+    GameSpells.spells.insert(
+        GameEnvironment.FIFTHSPELL,
+        Spell(
+            shape={"type": "line", "size": 5, "color": "blue"},
+            effect="damage",
+            element=Spell.LIGHTNINGELEMENT,
+            modifiers=[Spell.LIGHTNINGMODIFIER],
+            description="arrow projectile",
+            is_projectile=True,
+            cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN / 2,
+        ),
+    )
     # put first spell on player.set_spell
     game_environment.player.set_spell(
-        game_environment.FIRSTSPELL, game_environment.FORTHSPELL
+        game_environment.FIRSTSPELL, game_environment.FIFTHSPELL
     )
     game_environment.player.set_spell(
         game_environment.SECONDSPELL, game_environment.SECONDSPELL
@@ -720,26 +752,28 @@ def loop(game_environment: GameEnvironment):
                 mouse_buttons = pygame.mouse.get_pressed()
                 if game_environment.game_paused == True:
                     # check if mouse clicked on spell
+                    choosen_spell = None
                     if mouse_buttons[0] == True:
-                        # check if mouse clicked on spell
-                        mouse_pos = pygame.mouse.get_pos()
-                        xpos = GameSpells.spells_initial_x
-                        ypos = GameSpells.spells_initial_y
-                        for spell in GameSpells.spells:
-                            if (
-                                xpos
-                                < mouse_pos[0]
-                                < xpos + GameSpells.spells_square_size
-                                and ypos
-                                < mouse_pos[1]
-                                < ypos + GameSpells.spells_square_size
-                            ):
-                                game_environment.player.set_spell(
-                                    game_environment.FIRSTSPELL,
-                                    GameSpells.spells.index(spell) + 1,
-                                )
-                                break
-                            xpos += GameSpells.spells_square_spacing
+                        choosen_spell = game_environment.FIRSTSPELL
+                    elif mouse_buttons[2] == True:
+                        choosen_spell = game_environment.SECONDSPELL
+                    # check if mouse clicked on spell
+                    mouse_pos = pygame.mouse.get_pos()
+                    xpos = GameSpells.spells_initial_x
+                    ypos = GameSpells.spells_initial_y
+                    for spell in GameSpells.spells:
+                        if (
+                            xpos < mouse_pos[0] < xpos + GameSpells.spells_square_size
+                            and ypos
+                            < mouse_pos[1]
+                            < ypos + GameSpells.spells_square_size
+                        ):
+                            game_environment.player.set_spell(
+                                choosen_spell,
+                                GameSpells.spells.index(spell) + 1,
+                            )
+                            break
+                        xpos += GameSpells.spells_square_spacing
                     break
                 if mouse_buttons[0] == True:
                     game_environment.player.cast_spell(game_environment.FIRSTSPELL)
