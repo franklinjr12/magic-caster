@@ -38,6 +38,7 @@ class GameEnvironment:
     enemies_shoot_at_player = False
     m1_spell_cooldown = None
     m2_spell_cooldown = None
+    enemies_ai = []
 
 
 # class Game
@@ -619,6 +620,42 @@ class InputsDrawer:
 # class InputsDrawer
 
 
+class EnemyAI:
+    def __init__(self, actor: Actor):
+        self.actor = actor
+        self.running = False
+
+    def update(self, player: Actor):
+        if self.actor.first_spell == None:
+            self.actor.set_spell(GameEnvironment.FIRSTSPELL, GameEnvironment.FIRSTSPELL)
+        xspeed = GameEnvironment.DEFAULTACTORSPEED * 0.8
+        if self.actor.pos.x > player.pos.x:
+            xspeed = -xspeed
+        if abs(self.actor.pos.x - player.pos.x) < 99:
+            self.running = True
+            xspeed = -xspeed
+        if abs(self.actor.pos.x - player.pos.x) >= 100:
+            self.running = False
+        self.actor.set_xspeed(xspeed)
+        yspeed = GameEnvironment.DEFAULTACTORSPEED * 3
+        if self.actor.pos.y > player.pos.y:
+            yspeed = -yspeed
+        if self.running == True:
+            yspeed = 0
+        self.actor.set_yspeed(yspeed + GameEnvironment.DEFAULTGRAVITY)
+        if self.running == False:
+            # shot spell at player pos
+            self.actor.cast_spell(
+                GameEnvironment.FIRSTSPELL,
+                player.pos.x,
+                player.pos.y,
+            )
+        self.actor.update()
+
+
+# class EnemyAI
+
+
 def setup(game_environment: GameEnvironment):
     # game setup
     pygame.init()
@@ -730,9 +767,13 @@ def setup(game_environment: GameEnvironment):
     game_environment.player_moving_right = False
     game_environment.player_moving_up = False
     game_environment.player_moving_down = False
-    game_environment.enemies.append(
-        Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
-    )
+
+    # enemies
+    en1 = Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
+    ai1 = EnemyAI(en1)
+    game_environment.enemies.append(en1)
+    game_environment.enemies_ai.append(ai1)
+
     game_environment.m1_spell_cooldown = SpellCooldownDisplay(
         "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
     )
@@ -762,9 +803,7 @@ def loop(game_environment: GameEnvironment):
                     ypos = GameSpells.spells_initial_y
                     for spell in GameSpells.spells:
                         if (
-                            xpos
-                            < mouse_pos[0]
-                            < xpos + GameSpells.spells_square_size
+                            xpos < mouse_pos[0] < xpos + GameSpells.spells_square_size
                             and ypos
                             < mouse_pos[1]
                             < ypos + GameSpells.spells_square_size
@@ -774,16 +813,30 @@ def loop(game_environment: GameEnvironment):
                                 GameSpells.spells.index(spell) + 1,
                             )
                             if spell_position == GameEnvironment.FIRSTSPELL:
-                                game_environment.m1_spell_cooldown = SpellCooldownDisplay(
-                                    "M1", game_environment.player.first_spell, game_environment, 10, 10, 30
+                                game_environment.m1_spell_cooldown = (
+                                    SpellCooldownDisplay(
+                                        "M1",
+                                        game_environment.player.first_spell,
+                                        game_environment,
+                                        10,
+                                        10,
+                                        30,
+                                    )
                                 )
                             else:
-                                game_environment.m2_spell_cooldown = SpellCooldownDisplay(
-                                    "M2", game_environment.player.second_spell, game_environment, 50, 10, 30
+                                game_environment.m2_spell_cooldown = (
+                                    SpellCooldownDisplay(
+                                        "M2",
+                                        game_environment.player.second_spell,
+                                        game_environment,
+                                        50,
+                                        10,
+                                        30,
+                                    )
                                 )
                             break
                         xpos += GameSpells.spells_square_spacing
-                    
+
                         # check if mouse clicked on spell
                     break
                 if mouse_buttons[0] == True:
@@ -843,17 +896,19 @@ def loop(game_environment: GameEnvironment):
                     game_environment.player.set_yspeed(0)
             # make enemy shoot at player
             if GameEnvironment.enemies_shoot_at_player == True:
-                for enemy in game_environment.enemies:
-                    if enemy.first_spell == None:
-                        enemy.set_spell(
-                            game_environment.FIRSTSPELL, game_environment.FIRSTSPELL
-                        )
-                    # shot spell at player pos
-                    enemy.cast_spell(
-                        game_environment.FIRSTSPELL,
-                        game_environment.player.pos.x,
-                        game_environment.player.pos.y,
-                    )
+                for enemy in game_environment.enemies_ai:
+                    enemy.update(game_environment.player)
+                # for enemy in game_environment.enemies:
+                #     if enemy.first_spell == None:
+                #         enemy.set_spell(
+                #             game_environment.FIRSTSPELL, game_environment.FIRSTSPELL
+                #         )
+                #     # shot spell at player pos
+                #     enemy.cast_spell(
+                #         game_environment.FIRSTSPELL,
+                #         game_environment.player.pos.x,
+                #         game_environment.player.pos.y,
+                #     )
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
                 if game_environment.player.body.colliderect(projectile.body):
@@ -871,8 +926,9 @@ def loop(game_environment: GameEnvironment):
             # update gravity
             game_environment.player.pos.y += game_environment.DEFAULTGRAVITY
             for enemy in game_environment.enemies:
-                enemy.pos.y += game_environment.DEFAULTGRAVITY
-                enemy.update(0, enemy.pos.y)
+                if GameEnvironment.enemies_shoot_at_player == False:
+                    enemy.pos.y += game_environment.DEFAULTGRAVITY
+                    enemy.update(enemy.pos.x + random.randint(-3, 3), enemy.pos.y)
             # check if player collides with surfaces
             for surface in game_environment.surfaces:
                 if game_environment.player.body.colliderect(surface.body):
