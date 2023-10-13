@@ -350,12 +350,22 @@ class Actor:
         self.last_time_burn = 0
         self.first_spell = None
         self.second_spell = None
+        self.image = None
+
+    def set_image(self, image_path):
+        # self.image = pygame.image.load_basic(image_path)
+        self.image = pygame.image.load(image_path)
 
     def draw(self):
-        # draws body
-        pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
-        # draws health
-        pygame.draw.rect(self.game_environment.screen, self.headcolor, self.head)
+        if self.image != None:
+            self.game_environment.screen.blit(
+                self.image, (self.pos.x, self.pos.y - self.image.get_size()[1])
+            )
+        else:
+            # draws body
+            pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
+            # draws health
+            pygame.draw.rect(self.game_environment.screen, self.headcolor, self.head)
         # show actor name
         if self.show_name:
             font = pygame.font.Font("freesansbold.ttf", 12)
@@ -671,6 +681,8 @@ def setup(game_environment: GameEnvironment):
         "Player",
         game_environment,
     )
+    # game_environment.player.set_image("assets/images/player.bmp")
+    game_environment.player.set_image("assets/images/player_transparent.png")
     # pre alloc index on GameSpells.spells
     GameSpells.spells.insert(
         GameEnvironment.FIRSTSPELL,
