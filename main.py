@@ -322,17 +322,19 @@ class Actor:
         self.game_environment = game_environment
         self.pos = pygame.Vector2(xpos, ypos)
         self.image = None
+        self.body_size = self.game_environment.DEFAULTRECTSIZE
+        self.head_size = self.game_environment.DEFAULTRECTSIZE / 2
         self.body = pygame.Rect(
             self.pos.x,
             self.pos.y,
-            self.game_environment.DEFAULTRECTSIZE,
-            self.game_environment.DEFAULTRECTSIZE,
+            self.body_size,
+            self.body_size,
         )
         self.head = pygame.Rect(
             self.pos.x + self.game_environment.DEFAULTRECTSIZE,
             self.pos.y,
-            self.game_environment.DEFAULTRECTSIZE / 2,
-            self.game_environment.DEFAULTRECTSIZE / 2,
+            self.head_size,
+            self.head_size,
         )
         self.bodycolor = "white"
         self.headcolor = "yellow"
@@ -353,40 +355,67 @@ class Actor:
         self.image = None
 
     def set_image(self, image_path):
-        # self.image = pygame.image.load_basic(image_path)
         self.image = pygame.image.load(image_path)
 
     def draw(self):
         if self.image != None:
-            self.game_environment.screen.blit(
-                self.image, (self.pos.x, self.pos.y - self.image.get_size()[1])
+            xsize, ysize = self.image.get_size()
+            if self.facing == self.game_environment.FACINGRIGHT:
+                self.game_environment.screen.blit(
+                    self.image, (self.pos.x, self.pos.y - ysize / 1.5)
+                )
+            else:
+                self.game_environment.screen.blit(
+                    pygame.transform.flip(self.image, True, False),
+                    (self.pos.x, self.pos.y - ysize / 1.5),
+                )
+            # show actor name
+            if self.show_name:
+                font = pygame.font.Font("freesansbold.ttf", 12)
+                text = font.render(self.actor_name, True, (255, 255, 255))
+                textRect = text.get_rect()
+                textRect.center = (
+                    self.pos.x + xsize / 2,
+                    self.pos.y - ysize,
+                )
+                self.game_environment.screen.blit(text, textRect)
+            # draw health bar
+            pygame.draw.rect(
+                self.game_environment.screen,
+                "green",
+                (
+                    self.pos.x - xsize / 2,
+                    self.pos.y - ysize - 8,
+                    self.life / 2,
+                    3,
+                ),
             )
         else:
             # draws body
             pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
             # draws health
             pygame.draw.rect(self.game_environment.screen, self.headcolor, self.head)
-        # show actor name
-        if self.show_name:
-            font = pygame.font.Font("freesansbold.ttf", 12)
-            text = font.render(self.actor_name, True, (255, 255, 255))
-            textRect = text.get_rect()
-            textRect.center = (
-                self.pos.x + self.game_environment.DEFAULTRECTSIZE / 2,
-                self.pos.y - self.game_environment.DEFAULTRECTSIZE / 2,
+            # show actor name
+            if self.show_name:
+                font = pygame.font.Font("freesansbold.ttf", 12)
+                text = font.render(self.actor_name, True, (255, 255, 255))
+                textRect = text.get_rect()
+                textRect.center = (
+                    self.pos.x + self.body_size / 2,
+                    self.pos.y - self.body_size / 2,
+                )
+                self.game_environment.screen.blit(text, textRect)
+            # draw health bar
+            pygame.draw.rect(
+                self.game_environment.screen,
+                "green",
+                (
+                    self.pos.x - self.body_size / 2 - 6,
+                    self.pos.y - self.body_size / 2 - 8,
+                    self.life / 2,
+                    3,
+                ),
             )
-            self.game_environment.screen.blit(text, textRect)
-        # draw health bar
-        pygame.draw.rect(
-            self.game_environment.screen,
-            "green",
-            (
-                self.pos.x - self.game_environment.DEFAULTRECTSIZE / 2 - 6,
-                self.pos.y - self.game_environment.DEFAULTRECTSIZE / 2 - 8,
-                self.life / 2,
-                3,
-            ),
-        )
 
     def set_xspeed(self, speed):
         self.xspeed = speed
@@ -681,8 +710,7 @@ def setup(game_environment: GameEnvironment):
         "Player",
         game_environment,
     )
-    # game_environment.player.set_image("assets/images/player.bmp")
-    game_environment.player.set_image("assets/images/player_transparent.png")
+    game_environment.player.set_image("assets/images/evil_wizard.png")
     # pre alloc index on GameSpells.spells
     GameSpells.spells.insert(
         GameEnvironment.FIRSTSPELL,
