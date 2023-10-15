@@ -353,21 +353,42 @@ class Actor:
         self.first_spell = None
         self.second_spell = None
         self.image = None
+        self.show_body_react_contour = False
+        self.ShownRect = None
 
     def set_image(self, image_path):
         self.image = pygame.image.load(image_path)
+        width, height = self.image.get_size()
+        self.body = pygame.Rect(
+            self.pos.x,
+            self.pos.y,
+            width,
+            height,
+        )
 
     def draw(self):
+        if self.ShownRect == None:
+            self.ShownRect = True
         if self.image != None:
+            if self.show_body_react_contour:
+                pygame.draw.rect(
+                    self.game_environment.screen,
+                    "white",
+                    self.body,
+                    2,
+                )
             xsize, ysize = self.image.get_size()
             if self.facing == self.game_environment.FACINGRIGHT:
                 self.game_environment.screen.blit(
-                    self.image, (self.pos.x, self.pos.y - ysize / 1.5)
+                    self.image,
+                    (self.pos.x, self.pos.y)
+                    # self.image, (self.pos.x, self.pos.y - ysize / 1.5)
                 )
             else:
                 self.game_environment.screen.blit(
                     pygame.transform.flip(self.image, True, False),
-                    (self.pos.x, self.pos.y - ysize / 1.5),
+                    (self.pos.x, self.pos.y),
+                    # (self.pos.x, self.pos.y - ysize / 1.5),
                 )
             # show actor name
             if self.show_name:
@@ -376,7 +397,7 @@ class Actor:
                 textRect = text.get_rect()
                 textRect.center = (
                     self.pos.x + xsize / 2,
-                    self.pos.y - ysize,
+                    self.pos.y - 1,
                 )
                 self.game_environment.screen.blit(text, textRect)
             # draw health bar
@@ -384,8 +405,8 @@ class Actor:
                 self.game_environment.screen,
                 "green",
                 (
-                    self.pos.x - xsize / 2,
-                    self.pos.y - ysize - 8,
+                    self.pos.x,
+                    self.pos.y - 8,
                     self.life / 2,
                     3,
                 ),
@@ -810,6 +831,7 @@ def setup(game_environment: GameEnvironment):
 
     # enemies
     en1 = Actor(100, game_environment.HEIGHT / 2, True, "Enemy1", game_environment)
+    en1.set_image("assets/images/New_Piskel-1.png")
     ai1 = EnemyAI(en1)
     game_environment.enemies.append(en1)
     game_environment.enemies_ai.append(ai1)
@@ -949,6 +971,17 @@ def loop(game_environment: GameEnvironment):
                 #         game_environment.player.pos.x,
                 #         game_environment.player.pos.y,
                 #     )
+
+            # updates
+            game_environment.player.update()
+            for projectile in game_environment.global_projectiles:
+                projectile.update()
+            for enemy in game_environment.enemies:
+                if enemy.life <= 0:
+                    game_environment.enemies.remove(enemy)
+                else:
+                    enemy.update(enemy.pos.x, enemy.pos.y)
+
             # check if player collides with projectiles
             for projectile in game_environment.global_projectiles:
                 if game_environment.player.body.colliderect(projectile.body):
@@ -973,23 +1006,13 @@ def loop(game_environment: GameEnvironment):
             for surface in game_environment.surfaces:
                 if game_environment.player.body.colliderect(surface.body):
                     game_environment.player.pos.y = (
-                        surface.pos.y - game_environment.DEFAULTRECTSIZE
+                        surface.pos.y - game_environment.player.body.height
                     )
                     game_environment.player.yspeed = 0
                 for enemy in game_environment.enemies:
                     if enemy.body.colliderect(surface.body):
-                        enemy.pos.y = surface.pos.y - game_environment.DEFAULTRECTSIZE
+                        enemy.pos.y = surface.pos.y - enemy.body.height
                         enemy.yspeed = 0
-
-            # updates
-            game_environment.player.update()
-            for projectile in game_environment.global_projectiles:
-                projectile.update()
-            for enemy in game_environment.enemies:
-                if enemy.life <= 0:
-                    game_environment.enemies.remove(enemy)
-                else:
-                    enemy.update(enemy.pos.x, enemy.pos.y)
 
         # fill the game_environment.screen with a color to wipe away anything from last frame
         game_environment.screen.fill("black")
