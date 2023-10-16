@@ -39,6 +39,7 @@ class GameEnvironment:
     m1_spell_cooldown = None
     m2_spell_cooldown = None
     enemies_ai = []
+    background = None
 
 
 # class Game
@@ -604,6 +605,26 @@ class Surface:
 # class Surface
 
 
+class Background:
+    def __init__(
+        self,
+        game_environment: GameEnvironment,
+        image_path="assets/images/background.png",
+    ):
+        self.game_environment = game_environment
+        self.image_path = image_path
+        self.image = pygame.image.load(self.image_path)
+
+    def draw(self):
+        # blip self.image along the scren width and height
+        for i in range(0, self.game_environment.WIDTH, self.image.get_width()):
+            for j in range(0, self.game_environment.HEIGHT, self.image.get_height()):
+                self.game_environment.screen.blit(self.image, (i, j))
+
+
+# class Background
+
+
 class SpellCooldownDisplay:
     def __init__(self, key, spell: Spell, game_environment, xpos, ypos, size):
         self.key = key
@@ -722,6 +743,7 @@ def setup(game_environment: GameEnvironment):
     game_environment.screen = pygame.display.set_mode(
         (game_environment.WIDTH, game_environment.HEIGHT)
     )
+    game_environment.background = Background(game_environment)
     game_environment.clock = pygame.time.Clock()
     game_environment.running = True
     game_environment.player = Actor(
@@ -1014,9 +1036,6 @@ def loop(game_environment: GameEnvironment):
                         enemy.pos.y = surface.pos.y - enemy.body.height
                         enemy.yspeed = 0
 
-        # fill the game_environment.screen with a color to wipe away anything from last frame
-        game_environment.screen.fill("black")
-
         if game_environment.game_paused == True:
             mouse_pos = pygame.mouse.get_pos()
             GameSpells.show_all_spells(game_environment)
@@ -1049,6 +1068,9 @@ def loop(game_environment: GameEnvironment):
                 game_environment.screen.blit(text, textRect)
 
         # drawings
+        # fill the game_environment.screen with a color to wipe away anything from last frame
+        # game_environment.screen.fill("black")
+        game_environment.background.draw()
         for surface in game_environment.surfaces:
             surface.draw()
         for projectile in game_environment.global_projectiles:
