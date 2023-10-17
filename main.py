@@ -71,6 +71,7 @@ class Spell:
         description=None,
         is_projectile=True,
         cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+        image=None,
     ):
         self.shape = shape
         self.effect = effect
@@ -81,6 +82,10 @@ class Spell:
         self.cooldown = cooldown
         self.cooldown_ticks = 0
         self.damage = GameEnvironment.DEFAULTSPELLDAMAGE
+        self.image = image
+
+    def set_image(image):
+        self.image = image
 
     def is_on_cooldown(self):
         current_time = pygame.time.get_ticks()
@@ -110,6 +115,7 @@ class Spell:
                         self.shape["size"],
                         self.shape["color"],
                         game_environment,
+                        self.image,
                     )
                 )
         elif self.description == "3 shot projectile":
@@ -271,7 +277,9 @@ class SpellCombination:
 
 
 class Projectile:
-    def __init__(self, spell, xpos, ypos, xvel, yvel, size, color, game_environment):
+    def __init__(
+        self, spell, xpos, ypos, xvel, yvel, size, color, game_environment, image=None
+    ):
         self.game_environment = game_environment
         self.spell = spell
         self.pos = pygame.Vector2(xpos, ypos)
@@ -282,14 +290,27 @@ class Projectile:
             self.game_environment.screen, color, (self.pos.x, self.pos.y), self.size
         )
         self.bodycolor = color
+        if image != None:
+            self.image = pygame.image.load(image)
+            self.body = pygame.Rect(
+                self.pos.x,
+                self.pos.y,
+                self.image.get_width(),
+                self.image.get_height(),
+            )
+        else:
+            self.image = None
 
     def draw(self):
-        pygame.draw.circle(
-            self.game_environment.screen,
-            self.bodycolor,
-            (self.pos.x, self.pos.y),
-            self.size,
-        )
+        if self.image == None:
+            pygame.draw.circle(
+                self.game_environment.screen,
+                self.bodycolor,
+                (self.pos.x, self.pos.y),
+                self.size,
+            )
+        else:
+            self.game_environment.screen.blit(self.image, (self.pos.x, self.pos.y))
 
     def update(self):
         self.pos.x += self.vel.x
@@ -602,7 +623,7 @@ class Surface:
             # draw self.image as texture to surface
             for i in range(int(self.pos.x), self.width, self.image.get_width()):
                 self.game_environment.screen.blit(self.image, (i, self.pos.y))
-                        
+
     def update(self):
         pass
 
@@ -778,6 +799,7 @@ def setup(game_environment: GameEnvironment):
             description="simple projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+            image="assets/images/first_spell.png",
         ),
     )
     GameSpells.spells.insert(
@@ -830,7 +852,7 @@ def setup(game_environment: GameEnvironment):
     )
     # put first spell on player.set_spell
     game_environment.player.set_spell(
-        game_environment.FIRSTSPELL, game_environment.FIFTHSPELL
+        game_environment.FIRSTSPELL, game_environment.FIRSTSPELL
     )
     game_environment.player.set_spell(
         game_environment.SECONDSPELL, game_environment.SECONDSPELL
@@ -1050,6 +1072,42 @@ def loop(game_environment: GameEnvironment):
                         enemy.pos.y = surface.pos.y - enemy.body.height
                         enemy.yspeed = 0
 
+        # if game_environment.game_paused == True:
+        #     mouse_pos = pygame.mouse.get_pos()
+        #     GameSpells.show_all_spells(game_environment)
+        #     for enemy in game_environment.enemies:
+        #         if enemy.body.collidepoint(mouse_pos[0], mouse_pos[1]):
+        #             # show enemy modifiers
+        #             modifiers_str = "modifiers:"
+        #             for modifier in enemy.modifiers:
+        #                 modifiers_str += modifier + " "
+        #             font = pygame.font.Font("freesansbold.ttf", 12)
+        #             text = font.render(modifiers_str, True, (255, 255, 255))
+        #             textRect = text.get_rect()
+        #             textRect.center = (
+        #                 mouse_pos[0],
+        #                 mouse_pos[1] - 50,
+        #             )
+        #             game_environment.screen.blit(text, textRect)
+        #     # show player modifiers
+        #     if game_environment.player.body.collidepoint(mouse_pos[0], mouse_pos[1]):
+        #         modifiers_str = "modifiers:"
+        #         for modifier in game_environment.player.modifiers:
+        #             modifiers_str += modifier + " "
+        #         font = pygame.font.Font("freesansbold.ttf", 12)
+        #         text = font.render(modifiers_str, True, (255, 255, 255))
+        #         textRect = text.get_rect()
+        #         textRect.center = (
+        #             mouse_pos[0],
+        #             mouse_pos[1] - 50,
+        #         )
+        #         game_environment.screen.blit(text, textRect)
+
+        # drawings
+        # fill the game_environment.screen with a color to wipe away anything from last frame
+        # game_environment.screen.fill("black")
+        game_environment.background.draw()
+
         if game_environment.game_paused == True:
             mouse_pos = pygame.mouse.get_pos()
             GameSpells.show_all_spells(game_environment)
@@ -1081,10 +1139,6 @@ def loop(game_environment: GameEnvironment):
                 )
                 game_environment.screen.blit(text, textRect)
 
-        # drawings
-        # fill the game_environment.screen with a color to wipe away anything from last frame
-        # game_environment.screen.fill("black")
-        game_environment.background.draw()
         for surface in game_environment.surfaces:
             surface.draw()
         for projectile in game_environment.global_projectiles:
