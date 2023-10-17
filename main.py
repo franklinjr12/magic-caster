@@ -596,10 +596,23 @@ class Surface:
         self.bodycolor = "green"
 
     def draw(self):
-        pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
-
+        if self.image == None:
+            pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
+        else:
+            # draw self.image as texture to surface
+            for i in range(int(self.pos.x), self.width, self.image.get_width()):
+                self.game_environment.screen.blit(self.image, (i, self.pos.y))
+                        
     def update(self):
         pass
+
+    def set_image(self, image_path):
+        self.image = pygame.image.load(image_path)
+        width, height = self.image.get_size()
+        if self.width < width:
+            self.width = width
+        if self.height < height:
+            self.height = height
 
 
 # class Surface
@@ -829,6 +842,7 @@ def setup(game_environment: GameEnvironment):
         4,
         game_environment,
     )
+    floor.set_image("assets/images/floor_2.png")
     platform1 = Surface(
         game_environment.WIDTH / 2 + 100,
         game_environment.HEIGHT / 2,
