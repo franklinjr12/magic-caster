@@ -136,6 +136,7 @@ class Spell:
                         self.shape["size"],
                         self.shape["color"],
                         game_environment,
+                        self.image,
                     )
                 )
                 game_environment.global_projectiles.append(
@@ -148,6 +149,7 @@ class Spell:
                         self.shape["size"],
                         self.shape["color"],
                         game_environment,
+                        self.image,
                     )
                 )
                 game_environment.global_projectiles.append(
@@ -160,6 +162,7 @@ class Spell:
                         self.shape["size"],
                         self.shape["color"],
                         game_environment,
+                        self.image,
                     )
                 )
         elif self.description == "arrow projectile":
@@ -179,6 +182,7 @@ class Spell:
                     self.shape["size"],
                     self.shape["color"],
                     game_environment,
+                    self.image,
                 )
             )
 
@@ -323,15 +327,24 @@ class Projectile:
 
 
 class ArrowProjectile(Projectile):
+    flipped = None
+
     def draw(self):
-        endx = self.pos.x + self.size * (self.vel.x)
-        endy = self.pos.y + self.size * (self.vel.y)
-        pygame.draw.line(
-            self.game_environment.screen,
-            self.bodycolor,
-            (self.pos.x, self.pos.y),
-            (endx, endy),
-        )
+        if self.image == None:
+            endx = self.pos.x + self.size * (self.vel.x)
+            endy = self.pos.y + self.size * (self.vel.y)
+            pygame.draw.line(
+                self.game_environment.screen,
+                self.bodycolor,
+                (self.pos.x, self.pos.y),
+                (endx, endy),
+            )
+        else:
+            if self.flipped == None:
+                self.flipped = True
+                if self.vel.x > 0:
+                    self.image = pygame.transform.flip(self.image, True, False)
+            self.game_environment.screen.blit(self.image, (self.pos.x, self.pos.y))
 
 
 # class ArrowProjectile
@@ -812,6 +825,7 @@ def setup(game_environment: GameEnvironment):
             description="3 shot projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN * 2,
+            image="assets/images/second_spell.png",
         ),
     )
     GameSpells.spells.insert(
@@ -824,6 +838,7 @@ def setup(game_environment: GameEnvironment):
             description="simple projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+            image="assets/images/third_spell.png",
         ),
     )
     GameSpells.spells.insert(
@@ -836,6 +851,7 @@ def setup(game_environment: GameEnvironment):
             description="arrow projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN,
+            image="assets/images/forth_spell.png",
         ),
     )
     GameSpells.spells.insert(
@@ -848,6 +864,7 @@ def setup(game_environment: GameEnvironment):
             description="arrow projectile",
             is_projectile=True,
             cooldown=GameEnvironment.DEFAULTSPELLCOOLDOWN / 2,
+            image="assets/images/fifth_spell.png",
         ),
     )
     # put first spell on player.set_spell
