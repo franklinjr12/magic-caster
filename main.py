@@ -373,7 +373,6 @@ class Actor:
         )
         self.bodycolor = "white"
         self.headcolor = "yellow"
-        self.yspeed = 0
         self.facing = self.game_environment.FACINGRIGHT
         self.last_time = pygame.time.get_ticks()
         self.first_spell_last_time = pygame.time.get_ticks()
@@ -634,7 +633,9 @@ class Surface:
             pygame.draw.rect(self.game_environment.screen, self.bodycolor, self.body)
         else:
             # draw self.image as texture to surface
-            for i in range(int(self.pos.x), self.width, self.image.get_width()):
+            for i in range(
+                int(self.pos.x), int(self.width), int(self.image.get_width())
+            ):
                 self.game_environment.screen.blit(self.image, (i, self.pos.y))
 
     def update(self):
@@ -889,6 +890,7 @@ def setup(game_environment: GameEnvironment):
         4,
         game_environment,
     )
+    platform1.set_image("assets/images/floor_2.png")
     platform2 = Surface(
         0,
         game_environment.HEIGHT / 4,
@@ -896,6 +898,7 @@ def setup(game_environment: GameEnvironment):
         4,
         game_environment,
     )
+    platform2.set_image("assets/images/floor_2.png")
     game_environment.surfaces.append(floor)
     game_environment.surfaces.append(platform1)
     game_environment.surfaces.append(platform2)
@@ -1069,9 +1072,13 @@ def loop(game_environment: GameEnvironment):
             # check if player collides with surfaces
             for surface in game_environment.surfaces:
                 if game_environment.player.body.colliderect(surface.body):
-                    game_environment.player.pos.y = (
-                        surface.pos.y - game_environment.player.body.height
-                    )
+                    game_environment.player.xspeed = 0
+                    if game_environment.player.yspeed < 0:
+                        game_environment.player.yspeed = 0
+                    else:
+                        game_environment.player.pos.y = (
+                            surface.pos.y - game_environment.player.body.height
+                        )
                     game_environment.player.yspeed = 0
                 for enemy in game_environment.enemies:
                     if enemy.body.colliderect(surface.body):
