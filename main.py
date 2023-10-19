@@ -561,7 +561,7 @@ class Actor:
         angle = None
         if xpos == None and ypos == None:
             # get mouse position
-            mouse_pos = pygame.mouse.get_pos()
+            xpos, ypos = mouse_pos = pygame.mouse.get_pos()
             # get angle between player and mouse
             angle = pygame.math.Vector2(
                 mouse_pos[0] - self.pos.x, mouse_pos[1] - self.pos.y
@@ -570,15 +570,15 @@ class Actor:
             angle = pygame.math.Vector2(xpos - self.pos.x, ypos - self.pos.y).angle_to(
                 (1, 0)
             )
-        xpos = None
-        if self.facing == self.game_environment.FACINGLEFT:
-            xpos = self.pos.x - self.game_environment.DEFAULTRECTSIZE * 2
+        if self.pos.x > xpos:
+            xpos = self.pos.x - self.body.width + 3
         else:
-            xpos = self.pos.x + self.game_environment.DEFAULTRECTSIZE * 2
+            xpos = self.pos.x + self.body.width + 3
+        ypos = self.pos.y + self.body.height / 3
         if spell == self.game_environment.FIRSTSPELL:
-            self.first_spell.cast(self.game_environment, xpos, self.pos.y, angle)
+            self.first_spell.cast(self.game_environment, xpos, ypos, angle)
         if spell == self.game_environment.SECONDSPELL:
-            self.second_spell.cast(self.game_environment, xpos, self.pos.y, angle)
+            self.second_spell.cast(self.game_environment, xpos, ypos, angle)
         if spell == self.game_environment.THIRDSPELL:
             if self.first_spell != None and self.second_spell != None:
                 s = SpellCombination.create_spell_combination(
@@ -930,12 +930,12 @@ def loop(game_environment: GameEnvironment):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # check if left mouse clicked
                 mouse_buttons = pygame.mouse.get_pressed()
+                mouse_pos = pygame.mouse.get_pos()
                 if game_environment.game_paused == True:
                     # check if mouse clicked on spell
                     spell_position = GameEnvironment.FIRSTSPELL
                     if mouse_buttons[2] == True:
                         spell_position = GameEnvironment.SECONDSPELL
-                    mouse_pos = pygame.mouse.get_pos()
                     xpos = GameSpells.spells_initial_x
                     ypos = GameSpells.spells_initial_y
                     for spell in GameSpells.spells:
@@ -981,7 +981,7 @@ def loop(game_environment: GameEnvironment):
                 if mouse_buttons[2] == True:
                     game_environment.player.cast_spell(game_environment.SECONDSPELL)
                 if mouse_buttons[1] == True:
-                    game_environment.player.cast_spell(game_environment.THIRDSPELL)
+                    game_environment.player.cast_spell()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     game_environment.game_paused = not game_environment.game_paused
@@ -1035,17 +1035,6 @@ def loop(game_environment: GameEnvironment):
             if GameEnvironment.enemies_shoot_at_player == True:
                 for enemy in game_environment.enemies_ai:
                     enemy.update(game_environment.player)
-                # for enemy in game_environment.enemies:
-                #     if enemy.first_spell == None:
-                #         enemy.set_spell(
-                #             game_environment.FIRSTSPELL, game_environment.FIRSTSPELL
-                #         )
-                #     # shot spell at player pos
-                #     enemy.cast_spell(
-                #         game_environment.FIRSTSPELL,
-                #         game_environment.player.pos.x,
-                #         game_environment.player.pos.y,
-                #     )
 
             # updates
             game_environment.player.update()
