@@ -1071,8 +1071,17 @@ def loop(game_environment: GameEnvironment):
                     enemy.update(enemy.pos.x + random.randint(-3, 3), enemy.pos.y)
             # check if player collides with surfaces
             for surface in game_environment.surfaces:
+                player = game_environment.player
+                if (
+                    player.pos.x > surface.body.x
+                    and player.pos.x < surface.body.x + surface.body.width
+                ):
+                    if (
+                        player.pos.y > surface.body.y
+                        and player.pos.y < surface.body.y + surface.body.height
+                    ):
+                        player.pos.x -= player.xspeed
                 if game_environment.player.body.colliderect(surface.body):
-                    game_environment.player.xspeed = 0
                     if game_environment.player.yspeed < 0:
                         game_environment.player.yspeed = 0
                     else:
