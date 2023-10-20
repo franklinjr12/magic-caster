@@ -46,13 +46,16 @@ class GameEnvironment:
 
 
 class Spell:
+    # change these to ids
     SLOWMODIFIER = "slow"
     BURNMODIFIER = "burn"
     WETMODIFIER = "wet"
     POISONMODIFIER = "poison"
     LIGHTNINGMODIFIER = "lightning"
     RADIOACTIVEMODIFIER = "radioactive"
+    TOXICMODIFIER = "toxic"
 
+    # change these to ids
     FIREELEMENT = "fire"
     ICEELEMENT = "ice"
     WATERELEMENT = "water"
@@ -61,6 +64,7 @@ class Spell:
     VENOMELEMENT = "venom"
     LIGHTNINGELEMENT = "lightning"
     RADIOACTIVEELEMENT = "radioactive"
+    TOXICMISTELEMENT = "toxicmist"
 
     def __init__(
         self,
@@ -261,6 +265,23 @@ class SpellCombination:
             spellCombo.element = Spell.WATERELEMENT
             spellCombo.shape["color"] = "blue"
             spellCombo.modifiers.append(Spell.WETMODIFIER)
+        if (
+            spell1.element == Spell.FIREELEMENT and spell2.element == Spell.VENOMELEMENT
+        ) or (
+            spell2.element == Spell.VENOMELEMENT and spell1.element == Spell.FIREELEMENT
+        ):
+            spellCombo.element = Spell.TOXICMISTELEMENT
+            spellCombo.shape["color"] = "green"
+            spellCombo.modifiers.append(Spell.TOXICMODIFIER)
+            spellCombo.description = "mist projectile"
+        if (
+            spell1.element == Spell.ENERGYELEMENT and spell2.element == Spell.LIGHTNINGELEMENT
+        ) or (
+            spell2.element == Spell.LIGHTNINGELEMENT and spell1.element == Spell.ENERGYELEMENT
+        ):
+            spellCombo.element = Spell.PLASMAELEMENT
+            spellCombo.shape["color"] = "white"
+            spellCombo.modifiers.append(Spell.PLASMAMODIFIER)
         if (
             spell1.element == Spell.FIREELEMENT
             and spell2.element == Spell.LIGHTNINGELEMENT
@@ -1093,37 +1114,6 @@ def loop(game_environment: GameEnvironment):
                     if enemy.body.colliderect(surface.body):
                         enemy.pos.y = surface.pos.y - enemy.body.height
                         enemy.yspeed = 0
-
-        # if game_environment.game_paused == True:
-        #     mouse_pos = pygame.mouse.get_pos()
-        #     GameSpells.show_all_spells(game_environment)
-        #     for enemy in game_environment.enemies:
-        #         if enemy.body.collidepoint(mouse_pos[0], mouse_pos[1]):
-        #             # show enemy modifiers
-        #             modifiers_str = "modifiers:"
-        #             for modifier in enemy.modifiers:
-        #                 modifiers_str += modifier + " "
-        #             font = pygame.font.Font("freesansbold.ttf", 12)
-        #             text = font.render(modifiers_str, True, (255, 255, 255))
-        #             textRect = text.get_rect()
-        #             textRect.center = (
-        #                 mouse_pos[0],
-        #                 mouse_pos[1] - 50,
-        #             )
-        #             game_environment.screen.blit(text, textRect)
-        #     # show player modifiers
-        #     if game_environment.player.body.collidepoint(mouse_pos[0], mouse_pos[1]):
-        #         modifiers_str = "modifiers:"
-        #         for modifier in game_environment.player.modifiers:
-        #             modifiers_str += modifier + " "
-        #         font = pygame.font.Font("freesansbold.ttf", 12)
-        #         text = font.render(modifiers_str, True, (255, 255, 255))
-        #         textRect = text.get_rect()
-        #         textRect.center = (
-        #             mouse_pos[0],
-        #             mouse_pos[1] - 50,
-        #         )
-        #         game_environment.screen.blit(text, textRect)
 
         # drawings
         # fill the game_environment.screen with a color to wipe away anything from last frame
